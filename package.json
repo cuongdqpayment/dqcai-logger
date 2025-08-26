@@ -1,6 +1,6 @@
 {
   "name": "@dqcai/logger",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "Universal Logger Library for React Native, Web, and Node.js",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -41,7 +41,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "preversion": "npm run test",
+    "version": "npm run build && npm run obfuscate && git add .",
+    "postversion": "git push --follow-tags",
+    "release:patch": "npm version patch && npm publish --access public",
+    "release:minor": "npm version minor && npm publish --access public",
+    "release:major": "npm version major && npm publish --access public"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
