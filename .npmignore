@@ -1,6 +1,9 @@
-src/
 node_modules/
+src/
 scripts/
-*.log
-*.map
-tsconfig*.json
+test/
+*.test.ts
+vitest.config.ts
+tsconfig.json
+tsconfig.build.json
+*.tgz
