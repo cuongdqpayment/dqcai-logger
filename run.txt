@@ -1,0 +1,3 @@
+npm run build      # Build TypeScript
+npm run obfuscate  # Obfuscate JS files
+npm run release    # Publish package

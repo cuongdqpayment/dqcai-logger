@@ -3,27 +3,27 @@
   "version": "1.0.0",
   "description": "Universal Logger Library for React Native, Web, and Node.js",
   "type": "module",
-  "main": "./dist/cjs/index.cjs",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.cjs"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./rn": {
-      "types": "./dist/types/transports/rn/FileTransport.d.ts",
+      "types": "./dist/rn/FileTransport.d.ts",
       "import": "./dist/rn/FileTransport.js",
       "require": "./dist/rn/FileTransport.cjs"
     },
     "./web": {
-      "types": "./dist/types/transports/web/FileTransport.d.ts",
+      "types": "./dist/web/FileTransport.d.ts",
       "import": "./dist/web/FileTransport.js",
       "require": "./dist/web/FileTransport.cjs"
     },
     "./node": {
-      "types": "./dist/types/transports/node/FileTransport.d.ts",
+      "types": "./dist/node/FileTransport.d.ts",
       "import": "./dist/node/FileTransport.js",
       "require": "./dist/node/FileTransport.cjs"
     }
