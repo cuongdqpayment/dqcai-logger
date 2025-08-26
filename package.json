@@ -12,20 +12,10 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./rn": {
-      "types": "./dist/rn/FileTransport.d.ts",
-      "import": "./dist/rn/FileTransport.js",
-      "require": "./dist/rn/FileTransport.cjs"
-    },
     "./web": {
       "types": "./dist/web/FileTransport.d.ts",
       "import": "./dist/web/FileTransport.js",
       "require": "./dist/web/FileTransport.cjs"
-    },
-    "./node": {
-      "types": "./dist/node/FileTransport.d.ts",
-      "import": "./dist/node/FileTransport.js",
-      "require": "./dist/node/FileTransport.cjs"
     }
   },
   "sideEffects": false,
@@ -61,18 +51,10 @@
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "axios": "^1.6.0",
-    "fs": "0.0.1-security",
-    "react-native-fs": "^2.20.0"
+    "axios": "^1.6.0"
   },
   "peerDependenciesMeta": {
     "axios": {
-      "optional": true
-    },
-    "fs": {
-      "optional": true
-    },
-    "react-native-fs": {
       "optional": true
     }
   },

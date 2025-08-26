@@ -19,9 +19,7 @@ export default defineConfig([
   // Environment-specific transports
   {
     entry: {
-      'rn/FileTransport': 'src/transports/rn/FileTransport.ts',
-      'web/FileTransport': 'src/transports/web/FileTransport.ts', 
-      'node/FileTransport': 'src/transports/node/FileTransport.ts',
+      'web/FileTransport': 'src/transports/web/FileTransport.ts'      
     },
     format: ['cjs', 'esm'],
     dts: true,
