@@ -65,6 +65,17 @@
     "fs": "0.0.1-security",
     "react-native-fs": "^2.20.0"
   },
+  "peerDependenciesMeta": {
+    "axios": {
+      "optional": true
+    },
+    "fs": {
+      "optional": true
+    },
+    "react-native-fs": {
+      "optional": true
+    }
+  },
   "keywords": [
     "logger",
     "react-native",

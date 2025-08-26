@@ -64,14 +64,3 @@ export const createLogger = (config?: LoggerConfig): UniversalLogger => {
   
   return logger;
 };
-
-
-// Transports (universal)
-// export * from './transports/ConsoleTransport'; // co o tren roi
-export * from './transports/ApiTransport';
-
-// Transports theo môi trường: cung cấp alias để import tường minh
-// Người dùng chọn đúng biến thể theo môi trường:
-export { default as RNFileTransport }   from './transports/rn/FileTransport';
-export { default as WebFileTransport }  from './transports/web/FileTransport';
-export { default as NodeFileTransport } from './transports/node/FileTransport';
