@@ -1,0 +1,86 @@
+{
+  "name": "@dqcai/logger",
+  "version": "1.0.0",
+  "description": "Universal Logger Library for React Native, Web, and Node.js",
+  "type": "module",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs"
+    },
+    "./rn": {
+      "types": "./dist/types/transports/rn/FileTransport.d.ts",
+      "import": "./dist/rn/FileTransport.js",
+      "require": "./dist/rn/FileTransport.cjs"
+    },
+    "./web": {
+      "types": "./dist/types/transports/web/FileTransport.d.ts",
+      "import": "./dist/web/FileTransport.js",
+      "require": "./dist/web/FileTransport.cjs"
+    },
+    "./node": {
+      "types": "./dist/types/transports/node/FileTransport.d.ts",
+      "import": "./dist/node/FileTransport.js",
+      "require": "./dist/node/FileTransport.cjs"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "tsup",
+    "obfuscate": "node ./scripts/obfuscate.mjs",
+    "prepublishOnly": "npm run build && npm run obfuscate",
+    "release": "npm publish --access public",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/react-native-fs": "^2.13.0",
+    "@vitejs/plugin-react": "^5.0.1",
+    "javascript-obfuscator": "^4.1.0",
+    "rimraf": "^5.0.5",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.0.1",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "axios": "^1.6.0",
+    "fs": "0.0.1-security",
+    "react-native-fs": "^2.20.0"
+  },
+  "keywords": [
+    "logger",
+    "react-native",
+    "web",
+    "node",
+    "typescript",
+    "dqcai",
+    "doanquoccuong",
+    "cuongdq"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cuongdqpayment/dqcai-logger.git"
+  },
+  "author": "Doan Quoc Cuong",
+  "bugs": {
+    "url": "https://github.com/cuongdqpayment/dqcai-logger/issues"
+  },
+  "homepage": "https://github.com/cuongdqpayment/dqcai-logger#readme",
+  "dependencies": {
+    "glob": "^11.0.3",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}

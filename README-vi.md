@@ -1,41 +1,41 @@
-﻿# @dqcai/logger
+# @dqcai/logger
 
-🚀 **Universal Logger Library** for Web, Node.js, React Native - The most flexible and easy-to-configure logging library for modern projects.
+🚀 **Universal Logger Library** cho Web, Node.js, React Native - Thư viện log đa nền tảng, linh động và dễ cấu hình nhất hiện nay.
 
-## ✨ Key Features
+## ✨ Tính năng nổi bật
 
-- 🌐 **Cross-platform**: Supports Web, Node.js, React Native
-- ⚙️ **Flexible configuration**: Enable/disable logs by module, level, transport
-- 🎯 **Module-based logging**: Manage logs by individual modules
-- 🚀 **Multiple transports**: Console, File, API, and custom transports
-- 🔧 **Remote control**: Control logging remotely via API
-- 📦 **Zero dependencies**: Only peer dependencies when needed
-- 🎨 **TypeScript**: Full TypeScript support with type safety
+- 🌐 **Đa nền tảng**: Hỗ trợ Web, Node.js, React Native
+- ⚙️ **Cấu hình linh động**: Bật/tắt log theo module, level, transport
+- 🎯 **Module-based logging**: Quản lý log theo từng module riêng biệt
+- 🚀 **Transport đa dạng**: Console, File, API, và tùy chỉnh
+- 🔧 **Remote control**: Điều khiển log từ xa qua API
+- 📦 **Zero dependencies**: Chỉ cần peer dependencies khi cần thiết
+- 🎨 **TypeScript**: Hỗ trợ đầy đủ TypeScript với type safety
 
-## 📦 Installation
+## 📦 Cài đặt
 
 ```bash
 npm install @dqcai/logger
-# or
+# hoặc
 yarn add @dqcai/logger
-# or
+# hoặc
 pnpm add @dqcai/logger
 ```
 
-### Optional Dependencies
+### Dependencies tùy chọn
 
 ```bash
-# For React Native file transport
+# Cho React Native file transport
 npm install react-native-fs
 
-# For API transport
+# Cho API transport
 npm install axios
 
-# For Node.js file transport (built-in)
-# fs module is built-in
+# Cho Node.js file transport (tự động có sẵn)
+# fs module built-in
 ```
 
-## 🚀 Quick Start
+## 🚀 Bắt đầu nhanh
 
 ### Basic Usage
 
@@ -44,13 +44,13 @@ import { createLogger } from '@dqcai/logger';
 
 const logger = createLogger();
 
-// Basic usage
-logger.info('MyModule', 'Application started');
-logger.error('MyModule', 'An error occurred', { error: 'details' });
+// Sử dụng cơ bản
+logger.info('MyModule', 'Ứng dụng đã khởi động');
+logger.error('MyModule', 'Có lỗi xảy ra', { error: 'details' });
 logger.debug('MyModule', 'Debug info', { userId: 123 });
 ```
 
-### With BaseModule Class
+### Với BaseModule Class
 
 ```typescript
 import { BaseModule, createLogger } from '@dqcai/logger';
@@ -63,20 +63,20 @@ class DatabaseManager extends BaseModule {
   }
 
   async connect() {
-    await this.logInfo('Connecting to database...');
+    await this.logInfo('Đang kết nối database...');
     try {
       // Database connection logic
-      await this.logDebug('Connected successfully');
+      await this.logDebug('Kết nối thành công');
     } catch (error) {
-      await this.logError('Connection failed', { error });
+      await this.logError('Kết nối thất bại', { error });
     }
   }
 }
 ```
 
-## ⚙️ Advanced Configuration
+## ⚙️ Cấu hình nâng cao
 
-### 1. Configuration with ConfigBuilder
+### 1. Cấu hình với ConfigBuilder
 
 ```typescript
 import { LoggerConfigBuilder, createLogger } from '@dqcai/logger';
@@ -86,24 +86,24 @@ const config = new LoggerConfigBuilder()
   .setDefaultLevel('info')
   .addModule('App', true, ['info','warn','error'], ['console'])
   .addModule('DatabaseManager', true, ['debug','info','warn','error'], ['console','file'])
-  .addModule('ApiClient', false) // Completely disabled
+  .addModule('ApiClient', false) // Tắt hoàn toàn
   .addModule('AuthService', true, ['error'], ['console','api'])
   .build();
 
 const logger = createLogger(config);
 ```
 
-### 2. Dynamic Enable/Disable at Runtime
+### 2. Bật/tắt động trong runtime
 
 ```typescript
-// Disable logging for a module
+// Tắt log của một module
 logger.setModuleConfig('DatabaseManager', {
   enabled: false,
   levels: [],
   transports: []
 });
 
-// Re-enable with new configuration
+// Bật lại với cấu hình mới
 logger.setModuleConfig('DatabaseManager', {
   enabled: true,
   levels: ['warn','error'],
@@ -111,7 +111,7 @@ logger.setModuleConfig('DatabaseManager', {
 });
 ```
 
-## 🌍 Platform-Specific Usage
+## 🌍 Sử dụng theo từng nền tảng
 
 ### React Native
 
@@ -123,7 +123,7 @@ const logger = createLogger();
 logger.addTransport(new ConsoleTransport());
 logger.addTransport(new FileTransport('app.log'));
 
-// Usage in component
+// Sử dụng trong component
 export default function App() {
   useEffect(() => {
     logger.info('App', 'React Native app started');
@@ -143,7 +143,7 @@ const logger = createLogger();
 logger.addTransport(new ConsoleTransport());
 logger.addTransport(new FileTransport());
 
-// Usage in web app
+// Sử dụng trong web app
 logger.info('WebApp', 'Web application loaded');
 ```
 
@@ -157,7 +157,7 @@ const logger = createLogger();
 logger.addTransport(new ConsoleTransport());
 logger.addTransport(new FileTransport('./server.log'));
 
-// Usage in server
+// Sử dụng trong server
 logger.info('Server', 'Server started on port 3000');
 ```
 
@@ -191,7 +191,7 @@ logger.addTransport(new FileTransport('./logs/server.log'));
 ```typescript
 import { FileTransport } from '@dqcai/logger/web';
 
-logger.addTransport(new FileTransport()); // Uses localStorage
+logger.addTransport(new FileTransport()); // Sử dụng localStorage
 ```
 
 ### 3. API Transport
@@ -220,13 +220,13 @@ class CustomTransport implements ILogTransport {
 logger.addTransport(new CustomTransport());
 ```
 
-## 🎯 Complete Project Example
+## 🎯 Ví dụ dự án hoàn chỉnh
 
-### Project Structure
+### Cấu trúc dự án
 
 ```
 src/
-├── logger.config.ts     // Global logger configuration
+├── logger.config.ts     // Cấu hình logger toàn cục
 ├── services/
 │   ├── BaseService.ts   // Service base class
 │   ├── DatabaseManager.ts
@@ -238,10 +238,10 @@ src/
 
 ```typescript
 import { LoggerConfigBuilder, createLogger, ConsoleTransport } from '@dqcai/logger';
-import { FileTransport } from '@dqcai/logger/rn'; // or /node, /web
+import { FileTransport } from '@dqcai/logger/rn'; // hoặc /node, /web
 import { ApiTransport } from '@dqcai/logger';
 
-// Configuration for development/production environment
+// Cấu hình cho môi trường development/production
 const isDev = process.env.NODE_ENV === 'development';
 
 const config = new LoggerConfigBuilder()
@@ -253,12 +253,12 @@ const config = new LoggerConfigBuilder()
     ['console','file','api']
   )
   .addModule('ApiClient', true, ['info','warn','error'], ['console','api'])
-  .addModule('BaseService', isDev) // Only enable in dev
+  .addModule('BaseService', !isDev) // Chỉ bật ở dev
   .build();
 
 export const logger = createLogger(config);
 
-// Add transports
+// Thêm transports
 logger.addTransport(new ConsoleTransport());
 logger.addTransport(new FileTransport('myapp.log'));
 logger.addTransport(new ApiTransport('https://logging-api.com', '/api/logs'));
@@ -479,9 +479,9 @@ export default function App() {
 }
 ```
 
-## 🔧 Remote Control - Control Logging Remotely
+## 🔧 Remote Control - Điều khiển log từ xa
 
-### 1. Create API endpoint for config
+### 1. Tạo API endpoint cho config
 
 ```javascript
 // Server endpoint: GET /api/logger-config
@@ -508,7 +508,7 @@ export default function App() {
 }
 ```
 
-### 2. Fetch config from server
+### 2. Fetch config từ server
 
 ```typescript
 // src/logger/RemoteConfig.ts
@@ -541,7 +541,7 @@ export class RemoteLoggerConfig {
 }
 ```
 
-### 3. Use remote config
+### 3. Sử dụng remote config
 
 ```typescript
 // src/logger.config.ts
@@ -576,7 +576,7 @@ setInterval(async () => {
 
 ## 📊 Best Practices
 
-### 1. Environment-based Configuration
+### 1. Cấu hình theo môi trường
 
 ```typescript
 const getLoggerConfig = () => {
@@ -607,7 +607,7 @@ const getLoggerConfig = () => {
 };
 ```
 
-### 2. Structured Logging
+### 2. Structured logging
 
 ```typescript
 // Good: Structured data
@@ -623,7 +623,7 @@ logger.info('UserService', 'User login', {
 logger.info('UserService', `User ${user.email} logged in at ${new Date()}`);
 ```
 
-### 3. Error Handling
+### 3. Error handling
 
 ```typescript
 class ServiceBase extends BaseModule {
@@ -648,7 +648,7 @@ class ServiceBase extends BaseModule {
 }
 ```
 
-### 4. Performance Monitoring
+### 4. Performance monitoring
 
 ```typescript
 class PerformanceLogger extends BaseModule {
@@ -682,7 +682,7 @@ class PerformanceLogger extends BaseModule {
 
 ## 📋 Migration Guide
 
-### From console.log
+### Từ console.log
 
 ```typescript
 // Before
@@ -694,7 +694,7 @@ logger.info('AuthService', 'User logged in', { user });
 logger.error('ApiService', 'API request failed', { error });
 ```
 
-### From other logging libraries
+### Từ other logging libraries
 
 ```typescript
 // From winston
@@ -714,11 +714,11 @@ logger.debug('ModuleName', 'message');
 
 ## 🤝 Contributing
 
-We welcome all contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+Chúng tôi hoan nghênh mọi đóng góp! Vui lòng đọc [CONTRIBUTING.md](CONTRIBUTING.md) để biết thêm chi tiết.
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - xem file [LICENSE](LICENSE) để biết thêm chi tiết.
 
 ## 🆘 Support
 
@@ -729,4 +729,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-**@dqcai/logger** - The perfect cross-platform logging solution for all JavaScript/TypeScript projects! 🚀
+**@dqcai/logger** - Giải pháp logging đa nền tảng hoàn hảo cho mọi dự án JavaScript/TypeScript! 🚀
