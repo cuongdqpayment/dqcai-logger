@@ -730,3 +730,167 @@ MIT License - xem file [LICENSE](LICENSE) để biết thêm chi tiết.
 ---
 
 **@dqcai/logger** - Giải pháp logging đa nền tảng hoàn hảo cho mọi dự án JavaScript/TypeScript! 🚀
+
+# DQCAI LOGGER - PROJECT COMMANDS REFERENCE
+
+## 🏗️ BUILD & DEVELOPMENT COMMANDS
+
+```sh
+### Clean & Build
+npm run clean                    # Xóa thư mục dist
+npm run build                    # Build thư viện (tạo cả CommonJS và ESM)
+npm run clean && npm run build   # Clean build hoàn toàn
+
+### Obfuscation (Bảo mật code)
+npm run obfuscate               # Obfuscate code đã build
+
+### Type Checking
+npm run typecheck               # Kiểm tra TypeScript types mà không build
+
+## 🧪 TESTING COMMANDS
+
+### Basic Testing
+npm run test                    # Chạy tất cả tests một lần
+npm test                        # Alias cho npm run test
+
+### Watch Mode Testing
+npm run test:watch              # Chạy tests ở chế độ watch (tự động chạy lại khi có thay đổi)
+
+### Testing UI
+npm run test:ui                 # Mở Vitest UI để xem kết quả test trong browser
+
+### Specific Test Files
+npx vitest run src/logger.test.ts        # Chạy một file test cụ thể
+npx vitest run --reporter=verbose        # Chạy test với output chi tiết
+npx vitest run --coverage               # Chạy test với coverage report
+
+## 📦 PUBLISHING COMMANDS
+
+### Automatic Publishing (Recommended)
+npm run release:patch           # Tăng patch version (1.0.3 -> 1.0.4) và publish
+npm run release:minor           # Tăng minor version (1.0.3 -> 1.1.0) và publish  
+npm run release:major           # Tăng major version (1.0.3 -> 2.0.0) và publish
+
+### Manual Publishing Steps
+npm run preversion              # Chạy tests trước khi version
+npm version patch               # Tăng patch version và commit
+npm version minor               # Tăng minor version và commit
+npm version major               # Tăng major version và commit
+npm run prepublishOnly          # Build và obfuscate trước khi publish
+npm run release                 # Publish lên NPM registry
+
+### Git Operations (Automatic với version commands)
+npm run version                 # Build, obfuscate và add files to git
+npm run postversion            # Push tags lên Git sau khi version
+
+## 🔍 DEBUGGING & DEVELOPMENT
+
+### Development Watch
+npx tsup --watch                # Watch mode cho build
+npx vitest --reporter=verbose   # Test với output chi tiết
+
+### Check Build Output
+ls -la dist/                    # Xem các file đã build
+ls -la dist/react-native/       # Xem React Native build
+cat dist/index.d.ts             # Xem TypeScript definitions
+
+### Package Analysis
+npm pack --dry-run              # Xem files sẽ được publish mà không thực sự pack
+npm pack                        # Tạo .tgz file để test local install
+tar -tzf *.tgz                  # Xem nội dung của package file
+```
+
+## 🏃‍♂️ QUICK WORKFLOWS
+
+### Development Workflow
+1. npm run clean
+2. npm run build
+3. npm run test
+4. npm run typecheck
+
+### Pre-commit Workflow  
+```sh
+npm run preversion              # Này sẽ chạy test tự động
+```
+### Release Workflow (Complete)
+1. npm run test                 # Ensure tests pass
+2. npm run typecheck            # Check types
+3. npm run clean                # Clean old builds  
+4. npm run build                # Fresh build
+5. npm run release:patch        # Version + publish
+
+### Local Testing Workflow
+1. npm pack                     # Tạo package file
+2. cd /path/to/test/project     # Chuyển đến project test
+3. npm install /path/to/your/dqcai-logger-1.0.3.tgz  # Install local package
+
+### React Native Testing Workflow
+1. npm run build
+2. cd react-native-test-app
+3. npm install file:../path/to/dqcai-logger
+4. npx react-native start
+5. npx react-native run-android  # hoặc run-ios
+
+## 🛠️ UTILITY COMMANDS
+
+```sh
+### Node Modules Management
+npm ci                          # Clean install (production-like)
+npm install                     # Install dependencies
+npm audit                       # Check security vulnerabilities
+npm audit fix                   # Auto-fix vulnerabilities
+
+### Git Helpers
+git tag                         # Xem tất cả tags
+git push --tags                 # Push tags manually nếu cần
+git log --oneline -10           # Xem commit history
+
+### Package Info
+npm view @dqcai/logger          # Xem thông tin package trên NPM
+npm view @dqcai/logger versions --json  # Xem tất cả versions đã publish
+
+## 🚨 TROUBLESHOOTING COMMANDS
+
+### When Tests Fail
+npm run clean                   # Clean first
+rm -rf node_modules package-lock.json  # Nuclear option
+npm install                     # Reinstall
+npm run test                    # Try again
+
+### When Build Fails
+npm run clean
+rm -rf dist
+npm run typecheck              # Check for type errors first
+npm run build
+```
+
+### When React Native White Screen
+1. Check Metro bundler logs
+2. npm run build                # Ensure fresh build
+3. cd react-native-project && npx react-native start --reset-cache
+4. Check import paths in your RN code
+
+### Publishing Issues
+```sh
+npm whoami                      # Check if logged in
+npm login                       # Login if needed
+npm run clean && npm run build  # Fresh build
+npm run release                 # Try publishing again
+
+## 📋 ENVIRONMENT CHECKS
+
+### Prerequisites Check
+node --version                  # Should be >= 18.17.0
+npm --version                   # Should be >= 8.0.0
+npx tsc --version              # Check TypeScript version
+
+### Project Health Check
+npm run typecheck              # TypeScript OK?
+npm run test                   # Tests passing?
+npm run build                  # Build successful?
+ls -la dist/                   # Files generated?
+```
+---
+💡 TIP: Always run tests before publishing!
+💡 TIP: Use semantic versioning (patch/minor/major) appropriately
+💡 TIP: Test your package locally before publishing with `npm pack`

@@ -1,8 +1,0 @@
-npm run clean
-npm run prepublishOnly
-
-npm run release:patch
-
-npm run build      # Build TypeScript
-npm run obfuscate  # Obfuscate JS files
-npm run release    # Publish package

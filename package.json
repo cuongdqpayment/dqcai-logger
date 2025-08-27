@@ -6,16 +6,25 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "react-native": "./dist/react-native/index.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "react-native": "./dist/react-native/index.js",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
     },
     "./web": {
       "types": "./dist/web/FileTransport.d.ts",
       "import": "./dist/web/FileTransport.js",
       "require": "./dist/web/FileTransport.cjs"
+    },
+    "./react-native": {
+      "types": "./dist/react-native/index.d.ts",
+      "import": "./dist/react-native/index.js",
+      "require": "./dist/react-native/index.cjs",
+      "default": "./dist/react-native/index.js"
     }
   },
   "sideEffects": false,
@@ -43,6 +52,7 @@
     "@types/node": "^24.3.0",
     "@types/react-native-fs": "^2.13.0",
     "@vitejs/plugin-react": "^5.0.1",
+    "@vitest/ui": "3.2.4",
     "javascript-obfuscator": "^4.1.0",
     "rimraf": "^5.0.5",
     "ts-node": "^10.9.2",
@@ -51,10 +61,14 @@
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "react-native": ">=0.60.0"
   },
   "peerDependenciesMeta": {
     "axios": {
+      "optional": true
+    },
+    "react-native": {
       "optional": true
     }
   },

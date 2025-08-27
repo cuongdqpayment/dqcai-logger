@@ -1,7 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
-import { UniversalLogger } from "../core/Logger";
-import { LoggerConfigBuilder } from "../config/ConfigBuilder";
-import { ConsoleTransport } from "../transports/ConsoleTransport";
+// import { UniversalLogger } from "../core/Logger";
+// import { LoggerConfigBuilder } from "../config/ConfigBuilder";
+// import { ConsoleTransport } from "../transports/ConsoleTransport";
+
+// cau hinh lai theo tu van cua claude
+import {
+  LoggerConfigBuilder,
+  ConsoleTransport,
+  UniversalLogger,
+} from "@dqcai/logger";
 
 /**
 Circular Import Dependencies: File index.ts của bạn có thể đang tạo ra circular dependency:

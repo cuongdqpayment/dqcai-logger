@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "target": "ES2019",
+    "lib": ["ES2019"],
+    "jsx": "react-native",
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "noEmit": false,
+    "declaration": true,
+    "outDir": "./dist/react-native"
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "src/transports/web/**/*",
+    "src/transports/node/**/*"
+  ]
+}

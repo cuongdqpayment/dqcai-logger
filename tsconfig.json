@@ -2,8 +2,9 @@
   "extends": "./tsconfig.build.json",
   "compilerOptions": {
     "allowImportingTsExtensions": false,
-    "moduleResolution": "Node"
+    "moduleResolution": "Node",
+    "noEmit": true
   },
-  "include": ["src/**/*", "**/*.test.ts", "**/*.spec.ts"],
+  "include": ["src/**/*", "**/*.test.ts", "**/*.spec.ts", "scripts/**/*"],
   "exclude": ["node_modules", "dist"]
 }

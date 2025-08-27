@@ -1,8 +1,7 @@
 import { defineConfig } from 'vitest/config'
-import tsconfigPaths from 'vite-tsconfig-paths'
+import { resolve } from 'path'
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
   test: {
     environment: 'node',
     globals: true,
@@ -12,7 +11,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@dqcai/logger': new URL('./src', import.meta.url).pathname,
+      '@dqcai/logger': resolve(__dirname, './src/index.ts'),
+      '@dqcai/logger/': resolve(__dirname, './src/'),
     },
   },
   esbuild: {
