@@ -1,6 +1,6 @@
 {
   "name": "@dqcai/logger",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Universal Logger Library for React Native, Web, and Node.js",
   "type": "module",
   "main": "./dist/index.cjs",
