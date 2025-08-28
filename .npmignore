@@ -1,9 +1,19 @@
-node_modules/
+# Source code (chỉ publish build output)
 src/
-scripts/
-test/
-*.test.ts
-vitest.config.ts
 tsconfig.json
-tsconfig.build.json
-*.tgz
+rollup.config.js
+
+# Development files
+.vscode/
+.idea/
+
+# Tests
+__tests__/
+*.test.ts
+*.spec.ts
+
+# CI/CD
+.github/
+
+# Documentation source
+docs/

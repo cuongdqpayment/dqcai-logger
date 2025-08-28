@@ -1,90 +1,56 @@
 {
   "name": "@dqcai/logger",
   "version": "1.0.2",
-  "description": "Universal Logger Library for React Native, Web, and Node.js",
-  "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "description": "Universal Logger Library for every environment: React, React Native, Vue, Angular, Node.js, Browser",
+  "main": "lib/index.js", 
+  "module": "lib/index.esm.js", 
+  "browser": "lib/index.umd.js", 
+  "types": "lib/index.d.ts", 
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./rn": {
-      "types": "./dist/rn/FileTransport.d.ts",
-      "import": "./dist/rn/FileTransport.js",
-      "require": "./dist/rn/FileTransport.cjs"
-    },
-    "./web": {
-      "types": "./dist/web/FileTransport.d.ts",
-      "import": "./dist/web/FileTransport.js",
-      "require": "./dist/web/FileTransport.cjs"
-    },
-    "./node": {
-      "types": "./dist/node/FileTransport.d.ts",
-      "import": "./dist/node/FileTransport.js",
-      "require": "./dist/node/FileTransport.cjs"
+      "require": "./lib/index.js", 
+      "import": "./lib/index.esm.js", 
+      "browser": "./lib/index.umd.js"
     }
   },
-  "sideEffects": false,
   "files": [
-    "dist/"
+    "lib",
+    "src",
+    "README.md"
   ],
   "scripts": {
-    "clean": "rimraf dist",
-    "build": "tsup",
-    "obfuscate": "node ./scripts/obfuscate.mjs",
-    "prepublishOnly": "npm run build && npm run obfuscate",
-    "release": "npm publish --access public",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui": "vitest --ui",
-    "typecheck": "tsc --noEmit",
-    "preversion": "npm run test",
-    "version": "npm run build && npm run obfuscate && git add .",
-    "postversion": "git push --follow-tags",
-    "release:patch": "npm version patch && npm publish --access public",
-    "release:minor": "npm version minor && npm publish --access public",
-    "release:major": "npm version major && npm publish --access public"
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "clean": "rimraf lib",
+    "prepublishOnly": "npm run clean && npm run build && npm run test:all",
+    "test": "npm run test:node",
+    "test:node": "node test-package.js",
+    "test:es": "node test-es-module.mjs",
+    "test:browser": "echo 'Open test-browser.html in browser'",
+    "test:all": "npm run build && npm run test:node && npm run test:es"
   },
   "devDependencies": {
-    "@types/node": "^24.3.0",
-    "@types/react-native-fs": "^2.13.0",
-    "@vitejs/plugin-react": "^5.0.1",
-    "javascript-obfuscator": "^4.1.0",
-    "rimraf": "^5.0.5",
-    "ts-node": "^10.9.2",
-    "tsup": "^8.0.1",
-    "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
-  },
-  "peerDependencies": {
-    "axios": "^1.6.0",
-    "fs": "0.0.1-security",
-    "react-native-fs": "^2.20.0"
-  },
-  "peerDependenciesMeta": {
-    "axios": {
-      "optional": true
-    },
-    "fs": {
-      "optional": true
-    },
-    "react-native-fs": {
-      "optional": true
-    }
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "@types/node": "^18.0.0",
+    "rimraf": "^6.0.1",
+    "rollup": "^4.49.0",
+    "typescript": "^5.9.2"
   },
   "keywords": [
     "logger",
-    "react-native",
-    "web",
-    "node",
-    "typescript",
     "dqcai",
     "doanquoccuong",
-    "cuongdq"
+    "cuongdq",
+    "javascript",
+    "typescript",
+    "universal",
+    "react",
+    "react-native",
+    "nodejs",
+    "browser",
+    "library"
   ],
   "license": "MIT",
   "repository": {
@@ -95,9 +61,5 @@
   "bugs": {
     "url": "https://github.com/cuongdqpayment/dqcai-logger/issues"
   },
-  "homepage": "https://github.com/cuongdqpayment/dqcai-logger#readme",
-  "dependencies": {
-    "glob": "^11.0.3",
-    "vite-tsconfig-paths": "^5.1.4"
-  }
+  "homepage": "https://github.com/cuongdqpayment/dqcai-logger#readme"
 }

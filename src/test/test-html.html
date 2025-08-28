@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Logger Browser Test</title>
+</head>
+<body>
+    <h1>Universal Logger Browser Test</h1>
+    <div id="output"></div>
+
+    <!-- Load UMD build -->
+    <script src="./lib/index.umd.js"></script>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            output.innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+
+        try {
+            // Test global variable
+            log('✅ Global variable available: ' + (typeof YourLibraryName !== 'undefined'));
+            
+            // Test createLogger function
+            const logger = YourLibraryName.createLogger();
+            log('✅ Logger created: ' + (logger instanceof YourLibraryName.UniversalLogger));
+            
+            // Test logging
+            logger.info('Browser test message');
+            log('✅ Logging works in browser');
+            
+            // Test all exports
+            const exports = Object.keys(YourLibraryName);
+            log('📦 Available exports: ' + exports.join(', '));
+            
+            log('🎉 All browser tests passed!');
+            
+        } catch (error) {
+            log('❌ Browser test failed: ' + error.message);
+        }
+    </script>
+</body>
+</html>
