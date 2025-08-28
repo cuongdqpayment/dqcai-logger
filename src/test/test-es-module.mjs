@@ -3,7 +3,7 @@ import {
   ModuleLogger,
   createLogger,
   LoggerUtils
-} from './lib/index.esm.js';
+} from '../../lib/index.esm.js';
 
 console.log('🧪 ES Module Test Starting...');
 
