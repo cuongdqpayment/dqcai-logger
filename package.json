@@ -1,6 +1,6 @@
 {
   "name": "@dqcai/logger",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Universal Logger Library for every environment: React, React Native, Vue, Angular, Node.js, Browser",
   "main": "lib/index.js", 
   "module": "lib/index.esm.js", 
@@ -23,10 +23,12 @@
     "dev": "rollup -c -w",
     "clean": "rimraf lib",
     "prepublishOnly": "npm run clean && npm run build && npm run test:all",
+    "release": "npm publish --access public",
+    "release:patch": "npm version patch && npm publish --access public",
     "test": "npm run test:node",
-    "test:node": "node test-package.js",
-    "test:es": "node test-es-module.mjs",
-    "test:browser": "echo 'Open test-browser.html in browser'",
+    "test:node": "node ./src/test/test-package.js",
+    "test:es": "node ./src/test/test-es-module.mjs",
+    "test:browser": "echo 'Open ./src/test/test-browser.html in browser'",
     "test:all": "npm run build && npm run test:node && npm run test:es"
   },
   "devDependencies": {
