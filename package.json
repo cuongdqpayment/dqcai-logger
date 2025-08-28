@@ -3,13 +3,13 @@
   "version": "1.0.5",
   "description": "Universal Logger Library for every environment: React, React Native, Vue, Angular, Node.js, Browser",
   "main": "lib/index.js", 
-  "module": "lib/index.esm.js", 
+  "module": "lib/index.mjs", 
   "browser": "lib/index.umd.js", 
   "types": "lib/index.d.ts", 
   "exports": {
     ".": {
       "require": "./lib/index.js", 
-      "import": "./lib/index.esm.js", 
+      "import": "./lib/index.mjs", 
       "browser": "./lib/index.umd.js"
     }
   },

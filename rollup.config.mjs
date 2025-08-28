@@ -11,7 +11,7 @@ export default {
       sourcemap: true, // Tùy chọn: Thêm source map để debug
     },
     {
-      file: 'lib/index.esm.js', // ES Module
+      file: 'lib/index.mjs', // ES Module
       format: 'esm',
       sourcemap: true,
     },

@@ -127,7 +127,7 @@ try {
 
 // Test ES Modules (nếu có)
 console.log('📦 ES Module Test:');
-console.log('- Run: node --input-type=module -e "import pkg from \'./lib/index.esm.js\'; console.log(\'ES Module works:\', !!pkg)"');
+console.log('- Run: node --input-type=module -e "import pkg from \'../../lib/index.esm.js\'; console.log(\'ES Module works:\', !!pkg)"');
 console.log('✅ ES Module should work\n');
 
 // Test UMD (browser simulation)
