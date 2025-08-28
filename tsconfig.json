@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2017",
     "lib": ["dom", "dom.iterable", "es6"],
-    "allowJs": true,
+    "allowJs": false,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -15,14 +15,11 @@
     "noEmit": false,
     "declaration": true,
     "declarationDir": "lib",
+    "declarationMap": true,
+    "rootDir": "./src",
     "outDir": "lib",
     "jsx": "react-native"
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "node_modules",
-    "lib"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "lib", "**/*.test.ts", "src/test/**/*"]
 }

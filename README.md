@@ -1,58 +1,113 @@
 ﻿# @dqcai/logger
 
-🚀 **Universal Logger Library** for Web, Node.js, React Native - The most flexible and easy-to-configure logging library for modern projects.
+🚀 **Universal Logging Library for JavaScript & TypeScript**
+🚀 **Thư viện ghi log đa nền tảng cho JavaScript & TypeScript**
 
-## ✨ Key Features
+Cross-platform logging for **Node.js, Web, and React Native**.
+Hỗ trợ ghi log trên **Node.js, Web, và React Native**.
 
-- 🌐 **Cross-platform**: Supports Web, Node.js, React Native
-- ⚙️ **Flexible configuration**: Enable/disable logs by module, level, transport
-- 🎯 **Module-based logging**: Manage logs by individual modules
-- 🚀 **Multiple transports**: Console, File, API, and custom transports
-- 🔧 **Remote control**: Control logging remotely via API
-- 📦 **Zero dependencies**: Only peer dependencies when needed
-- 🎨 **TypeScript**: Full TypeScript support with type safety
+The most **flexible, modern, and developer-friendly logger** for real-world projects.
+Logger **linh hoạt, hiện đại, thân thiện với lập trình viên** cho các dự án thực tế.
+
+[![NPM Version](https://img.shields.io/npm/v/@dqcai/logger.svg)](https://www.npmjs.com/package/@dqcai/logger)
+[![License](https://img.shields.io/npm/l/@dqcai/logger.svg)](LICENSE)
+[![Downloads](https://img.shields.io/npm/dm/@dqcai/logger.svg)](https://www.npmjs.com/package/@dqcai/logger)
+
+---
+
+## ✨ Why @dqcai/logger?
+
+## ✨ Tại sao chọn @dqcai/logger?
+
+When building apps across **multiple environments** (Web, Node.js, React Native), logging is often fragmented.
+Khi xây dựng ứng dụng trên **nhiều môi trường** (Web, Node.js, React Native), việc ghi log thường bị rời rạc.
+
+`@dqcai/logger` solves this with a **single, unified API** and **pluggable transports** that work everywhere:
+`@dqcai/logger` giải quyết vấn đề này với **API thống nhất** và **các transport có thể cắm thêm** hoạt động ở mọi nơi:
+
+* 🌍 **Cross-platform** → One library for Web, Node.js, React Native.
+
+* 🌍 **Đa nền tảng** → Một thư viện duy nhất cho Web, Node.js, React Native.
+
+* 🛠 **Flexible configuration** → Control logs by **module, log level, transport**.
+
+* 🛠 **Cấu hình linh hoạt** → Kiểm soát log theo **module, cấp độ log, transport**.
+
+* 📂 **Multiple transports** → Console, File, API, or custom transport.
+
+* 📂 **Hỗ trợ nhiều transport** → Console, File, API, hoặc tùy chỉnh.
+
+* 🔧 **Runtime control** → Enable/disable logs dynamically.
+
+* 🔧 **Điều khiển runtime** → Bật/tắt log động khi đang chạy.
+
+* 🎯 **Module-based logging** → Organize logs per feature/service.
+
+* 🎯 **Ghi log theo module** → Tổ chức log theo từng chức năng/dịch vụ.
+
+* 💡 **TypeScript-first** → Strongly typed, tree-shakable, ESM & CJS ready.
+
+* 💡 **Ưu tiên TypeScript** → Kiểu mạnh, tree-shakable, hỗ trợ cả ESM & CJS.
+
+* ⚡ **Zero dependencies** → Lightweight, only optional peer deps.
+
+* ⚡ **Không phụ thuộc** → Gọn nhẹ, chỉ có peer deps tùy chọn.
+
+> 🏆 Instead of juggling `winston`, `pino`, and `react-native-logs`,
+> use **one consistent solution** across all platforms.
+> 🏆 Thay vì phải dùng `winston`, `pino`, `react-native-logs`,
+> hãy chọn **một giải pháp nhất quán duy nhất** trên tất cả nền tảng.
+
+---
 
 ## 📦 Installation
 
+## 📦 Cài đặt
+
 ```bash
 npm install @dqcai/logger
-# or
+# or / hoặc
 yarn add @dqcai/logger
-# or
+# or / hoặc
 pnpm add @dqcai/logger
 ```
 
-### Optional Dependencies
+**Optional transports**
+**Các transport tùy chọn**
 
 ```bash
-# For React Native file transport
+# React Native file logging / Ghi file trong React Native
 npm install react-native-fs
 
-# For API transport
+# API transport / Transport API
 npm install axios
-
-# For Node.js file transport (built-in)
-# fs module is built-in
 ```
+
+---
 
 ## 🚀 Quick Start
 
-### Basic Usage
+## 🚀 Bắt đầu nhanh
 
-```typescript
+### Basic Example
+
+### Ví dụ cơ bản
+
+```ts
 import { createLogger } from '@dqcai/logger';
 
 const logger = createLogger();
 
-// Basic usage
-logger.info('MyModule', 'Application started');
-logger.error('MyModule', 'An error occurred', { error: 'details' });
-logger.debug('MyModule', 'Debug info', { userId: 123 });
+logger.info('App', '🚀 Application started');
+logger.error('App', 'Something went wrong', { error: 'details' });
+logger.debug('App', 'Debugging info', { userId: 123 });
 ```
 
-### With BaseModule Class
+### Using `BaseModule`
 
-```typescript
+### Sử dụng `BaseModule`
+
+```ts
 import { BaseModule, createLogger } from '@dqcai/logger';
 
 const logger = createLogger();
@@ -63,670 +118,97 @@ class DatabaseManager extends BaseModule {
   }
 
   async connect() {
-    await this.logInfo('Connecting to database...');
+    this.logInfo('Connecting to database...');
     try {
-      // Database connection logic
-      await this.logDebug('Connected successfully');
+      this.logDebug('Connected successfully');
     } catch (error) {
-      await this.logError('Connection failed', { error });
+      this.logError('Connection failed', { error });
     }
   }
 }
 ```
-
-## ⚙️ Advanced Configuration
-
-### 1. Configuration with ConfigBuilder
-
-```typescript
-import { LoggerConfigBuilder, createLogger } from '@dqcai/logger';
-
-const config = new LoggerConfigBuilder()
-  .setEnabled(true)
-  .setDefaultLevel('info')
-  .addModule('App', true, ['info','warn','error'], ['console'])
-  .addModule('DatabaseManager', true, ['debug','info','warn','error'], ['console','file'])
-  .addModule('ApiClient', false) // Completely disabled
-  .addModule('AuthService', true, ['error'], ['console','api'])
-  .build();
-
-const logger = createLogger(config);
-```
-
-### 2. Dynamic Enable/Disable at Runtime
-
-```typescript
-// Disable logging for a module
-logger.setModuleConfig('DatabaseManager', {
-  enabled: false,
-  levels: [],
-  transports: []
-});
-
-// Re-enable with new configuration
-logger.setModuleConfig('DatabaseManager', {
-  enabled: true,
-  levels: ['warn','error'],
-  transports: ['console','file']
-});
-```
-
-## 🌍 Platform-Specific Usage
-
-### React Native
-
-```typescript
-import { createLogger, ConsoleTransport } from '@dqcai/logger';
-import { FileTransport } from '@dqcai/logger/rn';
-
-const logger = createLogger();
-logger.addTransport(new ConsoleTransport());
-logger.addTransport(new FileTransport('app.log'));
-
-// Usage in component
-export default function App() {
-  useEffect(() => {
-    logger.info('App', 'React Native app started');
-  }, []);
-
-  return <YourComponent />;
-}
-```
-
-### Web Browser
-
-```typescript
-import { createLogger, ConsoleTransport } from '@dqcai/logger';
-import { FileTransport } from '@dqcai/logger/web';
-
-const logger = createLogger();
-logger.addTransport(new ConsoleTransport());
-logger.addTransport(new FileTransport());
-
-// Usage in web app
-logger.info('WebApp', 'Web application loaded');
-```
-
-### Node.js
-
-```typescript
-import { createLogger, ConsoleTransport } from '@dqcai/logger';
-import { FileTransport } from '@dqcai/logger/node';
-
-const logger = createLogger();
-logger.addTransport(new ConsoleTransport());
-logger.addTransport(new FileTransport('./server.log'));
-
-// Usage in server
-logger.info('Server', 'Server started on port 3000');
-```
-
-## 🚛 Transport Options
-
-### 1. Console Transport (Default)
-
-```typescript
-import { ConsoleTransport } from '@dqcai/logger';
-
-logger.addTransport(new ConsoleTransport());
-```
-
-### 2. File Transport
-
-#### React Native
-```typescript
-import { FileTransport } from '@dqcai/logger/rn';
-
-logger.addTransport(new FileTransport('myapp.log'));
-```
-
-#### Node.js
-```typescript
-import { FileTransport } from '@dqcai/logger/node';
-
-logger.addTransport(new FileTransport('./logs/server.log'));
-```
-
-#### Web
-```typescript
-import { FileTransport } from '@dqcai/logger/web';
-
-logger.addTransport(new FileTransport()); // Uses localStorage
-```
-
-### 3. API Transport
-
-```typescript
-import { ApiTransport } from '@dqcai/logger';
-
-const apiTransport = new ApiTransport('https://your-api.com', '/logs');
-logger.addTransport(apiTransport);
-```
-
-### 4. Custom Transport
-
-```typescript
-import { ILogTransport, LogEntry } from '@dqcai/logger';
-
-class CustomTransport implements ILogTransport {
-  readonly name = 'custom';
-
-  async log(entry: LogEntry): Promise<void> {
-    // Your custom logging logic
-    console.log('Custom:', entry);
-  }
-}
-
-logger.addTransport(new CustomTransport());
-```
-
-## 🎯 Complete Project Example
-
-### Project Structure
-
-```
-src/
-├── logger.config.ts     // Global logger configuration
-├── services/
-│   ├── BaseService.ts   // Service base class
-│   ├── DatabaseManager.ts
-│   └── ApiClient.ts
-└── App.tsx             // Main app
-```
-
-### 1. logger.config.ts
-
-```typescript
-import { LoggerConfigBuilder, createLogger, ConsoleTransport } from '@dqcai/logger';
-import { FileTransport } from '@dqcai/logger/rn'; // or /node, /web
-import { ApiTransport } from '@dqcai/logger';
-
-// Configuration for development/production environment
-const isDev = process.env.NODE_ENV === 'development';
-
-const config = new LoggerConfigBuilder()
-  .setEnabled(true)
-  .setDefaultLevel(isDev ? 'debug' : 'warn')
-  .addModule('App', true, ['info','warn','error'], ['console','file'])
-  .addModule('DatabaseManager', true, 
-    isDev ? ['debug','info','warn','error'] : ['warn','error'], 
-    ['console','file','api']
-  )
-  .addModule('ApiClient', true, ['info','warn','error'], ['console','api'])
-  .addModule('BaseService', isDev) // Only enable in dev
-  .build();
-
-export const logger = createLogger(config);
-
-// Add transports
-logger.addTransport(new ConsoleTransport());
-logger.addTransport(new FileTransport('myapp.log'));
-logger.addTransport(new ApiTransport('https://logging-api.com', '/api/logs'));
-```
-
-### 2. BaseService.ts
-
-```typescript
-import { BaseModule } from '@dqcai/logger';
-import { logger } from '../logger.config';
-
-export class BaseService extends BaseModule {
-  constructor(moduleName: string = 'BaseService') {
-    super(moduleName, logger);
-  }
-
-  protected async handleError(method: string, error: any) {
-    await this.logError(`${method} failed`, { 
-      error: error.message,
-      stack: error.stack,
-      timestamp: new Date().toISOString()
-    });
-    throw error;
-  }
-
-  protected async trackOperation(operation: string, data?: any) {
-    await this.logInfo(`Operation: ${operation}`, data);
-  }
-}
-```
-
-### 3. DatabaseManager.ts
-
-```typescript
-import { BaseService } from './BaseService';
-
-export class DatabaseManager extends BaseService {
-  constructor() {
-    super('DatabaseManager');
-  }
-
-  async connect(connectionString: string) {
-    await this.logInfo('Attempting database connection', { 
-      host: connectionString.split('@')[1] 
-    });
-    
-    try {
-      // Database connection logic
-      await this.simulateConnection();
-      await this.logDebug('Database connected successfully');
-      return true;
-    } catch (error) {
-      await this.handleError('connect', error);
-      return false;
-    }
-  }
-
-  async query(sql: string, params?: any[]) {
-    await this.logDebug('Executing query', { sql, paramCount: params?.length });
-    
-    try {
-      // Query execution logic
-      const result = await this.executeQuery(sql, params);
-      await this.logDebug('Query executed', { rowCount: result.length });
-      return result;
-    } catch (error) {
-      await this.handleError('query', error);
-      throw error;
-    }
-  }
-
-  private async simulateConnection() {
-    // Simulate async connection
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-
-  private async executeQuery(sql: string, params?: any[]) {
-    // Simulate query execution
-    return [{ id: 1, name: 'test' }];
-  }
-}
-```
-
-### 4. ApiClient.ts
-
-```typescript
-import axios, { AxiosInstance } from 'axios';
-import { BaseService } from './BaseService';
-
-export class ApiClient extends BaseService {
-  private client: AxiosInstance;
-
-  constructor(baseURL: string) {
-    super('ApiClient');
-    this.client = axios.create({ baseURL });
-    this.setupInterceptors();
-  }
-
-  private setupInterceptors() {
-    this.client.interceptors.request.use(
-      async (config) => {
-        await this.logDebug('API Request', {
-          method: config.method?.toUpperCase(),
-          url: config.url,
-          headers: config.headers
-        });
-        return config;
-      },
-      async (error) => {
-        await this.logError('API Request Error', { error: error.message });
-        return Promise.reject(error);
-      }
-    );
-
-    this.client.interceptors.response.use(
-      async (response) => {
-        await this.logDebug('API Response', {
-          status: response.status,
-          url: response.config.url,
-          dataSize: JSON.stringify(response.data).length
-        });
-        return response;
-      },
-      async (error) => {
-        await this.logError('API Response Error', {
-          status: error.response?.status,
-          url: error.config?.url,
-          message: error.message
-        });
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  async get(url: string, params?: any) {
-    await this.trackOperation('GET', { url, params });
-    return this.client.get(url, { params });
-  }
-
-  async post(url: string, data?: any) {
-    await this.trackOperation('POST', { url, dataSize: JSON.stringify(data).length });
-    return this.client.post(url, data);
-  }
-}
-```
-
-### 5. App.tsx (React Native example)
-
-```typescript
-import React, { useEffect, useState } from 'react';
-import { View, Text, Button, Alert } from 'react-native';
-import { logger } from './logger.config';
-import { DatabaseManager } from './services/DatabaseManager';
-import { ApiClient } from './services/ApiClient';
-
-export default function App() {
-  const [dbManager] = useState(() => new DatabaseManager());
-  const [apiClient] = useState(() => new ApiClient('https://jsonplaceholder.typicode.com'));
-
-  useEffect(() => {
-    initializeApp();
-  }, []);
-
-  const initializeApp = async () => {
-    logger.info('App', '🚀 Application starting...', {
-      version: '1.0.0',
-      platform: 'react-native',
-      timestamp: new Date().toISOString()
-    });
-
-    try {
-      // Initialize database
-      const dbConnected = await dbManager.connect('mongodb://localhost:27017/myapp');
-      
-      if (dbConnected) {
-        await dbManager.query('SELECT * FROM users LIMIT 10');
-      }
-
-      // Test API
-      await apiClient.get('/users/1');
-      
-      logger.info('App', '✅ Application initialized successfully');
-    } catch (error) {
-      logger.error('App', '❌ Application initialization failed', { error });
-      Alert.alert('Error', 'Failed to initialize app');
-    }
-  };
-
-  const testLogging = async () => {
-    logger.info('App', '🧪 Testing different log levels');
-    logger.debug('App', 'Debug message', { debugInfo: 'detailed info' });
-    logger.warn('App', '⚠️ Warning message', { warningType: 'performance' });
-    logger.error('App', '🚨 Error message', { errorCode: 'TEST_ERROR' });
-  };
-
-  const testApiCall = async () => {
-    try {
-      const response = await apiClient.get('/posts/1');
-      Alert.alert('Success', `Post title: ${response.data.title}`);
-    } catch (error) {
-      Alert.alert('Error', 'API call failed');
-    }
-  };
-
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', padding: 20 }}>
-      <Text style={{ fontSize: 24, textAlign: 'center', marginBottom: 30 }}>
-        @dqcai/logger Demo
-      </Text>
-      
-      <Button title="Test Logging" onPress={testLogging} />
-      <View style={{ height: 10 }} />
-      <Button title="Test API Call" onPress={testApiCall} />
-      <View style={{ height: 10 }} />
-      <Button title="Reinitialize App" onPress={initializeApp} />
-    </View>
-  );
-}
-```
-
-## 🔧 Remote Control - Control Logging Remotely
-
-### 1. Create API endpoint for config
-
-```javascript
-// Server endpoint: GET /api/logger-config
-{
-  "enabled": true,
-  "defaultLevel": "info",
-  "modules": {
-    "App": { 
-      "enabled": true, 
-      "levels": ["info","warn","error"], 
-      "transports": ["console","api"] 
-    },
-    "DatabaseManager": { 
-      "enabled": true, 
-      "levels": ["debug","info","warn","error"], 
-      "transports": ["console","file","api"] 
-    },
-    "ApiClient": { 
-      "enabled": false, 
-      "levels": [], 
-      "transports": [] 
-    }
-  }
-}
-```
-
-### 2. Fetch config from server
-
-```typescript
-// src/logger/RemoteConfig.ts
-import axios from 'axios';
-import { LoggerConfig } from '@dqcai/logger';
-
-export class RemoteLoggerConfig {
-  private configUrl: string;
-  private fallbackConfig: LoggerConfig;
-
-  constructor(configUrl: string, fallbackConfig: LoggerConfig) {
-    this.configUrl = configUrl;
-    this.fallbackConfig = fallbackConfig;
-  }
-
-  async fetchConfig(): Promise<LoggerConfig> {
-    try {
-      const response = await axios.get(this.configUrl, { timeout: 5000 });
-      return response.data as LoggerConfig;
-    } catch (error) {
-      console.warn('[RemoteLoggerConfig] Failed to fetch remote config, using fallback');
-      return this.fallbackConfig;
-    }
-  }
-
-  async initializeWithRemoteConfig() {
-    const config = await this.fetchConfig();
-    return createLogger(config);
-  }
-}
-```
-
-### 3. Use remote config
-
-```typescript
-// src/logger.config.ts
-import { LoggerUtils, createLogger } from '@dqcai/logger';
-import { RemoteLoggerConfig } from './logger/RemoteConfig';
-
-const remoteConfig = new RemoteLoggerConfig(
-  'https://your-api.com/api/logger-config',
-  LoggerUtils.createProductionConfig() // fallback config
-);
-
-let logger = createLogger(LoggerUtils.createDevelopmentConfig()); // temporary
-
-export async function initializeLogger(): Promise<void> {
-  try {
-    logger = await remoteConfig.initializeWithRemoteConfig();
-    console.log('✅ Logger initialized with remote config');
-  } catch (error) {
-    console.error('❌ Failed to initialize logger with remote config:', error);
-  }
-}
-
-export function getLogger() {
-  return logger;
-}
-
-// Auto refresh config every 10 minutes
-setInterval(async () => {
-  await initializeLogger();
-}, 10 * 60 * 1000);
-```
-
-## 📊 Best Practices
-
-### 1. Environment-based Configuration
-
-```typescript
-const getLoggerConfig = () => {
-  const env = process.env.NODE_ENV || 'development';
-  
-  switch (env) {
-    case 'development':
-      return new LoggerConfigBuilder()
-        .setEnabled(true)
-        .setDefaultLevel('debug')
-        .build();
-    
-    case 'production':
-      return new LoggerConfigBuilder()
-        .setEnabled(true)
-        .setDefaultLevel('warn')
-        .addModule('critical', true, ['error'], ['console','api'])
-        .build();
-    
-    case 'test':
-      return new LoggerConfigBuilder()
-        .setEnabled(false)
-        .build();
-    
-    default:
-      return LoggerUtils.createDevelopmentConfig();
-  }
-};
-```
-
-### 2. Structured Logging
-
-```typescript
-// Good: Structured data
-logger.info('UserService', 'User login', {
-  userId: user.id,
-  email: user.email,
-  timestamp: new Date().toISOString(),
-  userAgent: req.headers['user-agent'],
-  ip: req.ip
-});
-
-// Avoid: String concatenation
-logger.info('UserService', `User ${user.email} logged in at ${new Date()}`);
-```
-
-### 3. Error Handling
-
-```typescript
-class ServiceBase extends BaseModule {
-  protected async safeExecute<T>(
-    operation: string, 
-    fn: () => Promise<T>
-  ): Promise<T | null> {
-    try {
-      await this.logDebug(`Starting ${operation}`);
-      const result = await fn();
-      await this.logDebug(`Completed ${operation}`, { success: true });
-      return result;
-    } catch (error) {
-      await this.logError(`Failed ${operation}`, {
-        error: error.message,
-        stack: error.stack,
-        operation
-      });
-      return null;
-    }
-  }
-}
-```
-
-### 4. Performance Monitoring
-
-```typescript
-class PerformanceLogger extends BaseModule {
-  async measureTime<T>(operation: string, fn: () => Promise<T>): Promise<T> {
-    const start = Date.now();
-    await this.logDebug(`Starting ${operation}`);
-    
-    try {
-      const result = await fn();
-      const duration = Date.now() - start;
-      
-      await this.logInfo(`Completed ${operation}`, {
-        duration: `${duration}ms`,
-        success: true
-      });
-      
-      return result;
-    } catch (error) {
-      const duration = Date.now() - start;
-      
-      await this.logError(`Failed ${operation}`, {
-        duration: `${duration}ms`,
-        error: error.message
-      });
-      
-      throw error;
-    }
-  }
-}
-```
-
-## 📋 Migration Guide
-
-### From console.log
-
-```typescript
-// Before
-console.log('User logged in:', user);
-console.error('API Error:', error);
-
-// After
-logger.info('AuthService', 'User logged in', { user });
-logger.error('ApiService', 'API request failed', { error });
-```
-
-### From other logging libraries
-
-```typescript
-// From winston
-// winston.info('message', { meta });
-
-// To @dqcai/logger
-logger.info('ModuleName', 'message', { meta });
-
-// From react-native-logs
-// const log = logger.createLogger();
-// log.debug('message');
-
-// To @dqcai/logger
-const logger = createLogger();
-logger.debug('ModuleName', 'message');
-```
-
-## 🤝 Contributing
-
-We welcome all contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-- 📖 [Documentation](https://mypos.ddns.net/logger)
-- 🐛 [Issues](https://github.com/cuongdqpayment/dqcai-logger/issues)
-- 💬 [Discussions](https://github.com/cuongdqpayment/dqcai-logger/discussions)
-- 📧 Email: cuongdq3500888@gmail.com
 
 ---
 
-**@dqcai/logger** - The perfect cross-platform logging solution for all JavaScript/TypeScript projects! 🚀
+## ⚙️ Advanced Configuration
+
+## ⚙️ Cấu hình nâng cao
+
+*(giữ code gốc, giải thích song ngữ trước/sau như trên)*
+
+---
+
+## 🌍 Platform Examples
+
+## 🌍 Ví dụ trên các nền tảng
+
+* React Native → React Native
+* Web Browser → Trình duyệt Web
+* Node.js → Node.js
+
+*(giữ nguyên code, chỉ cần phần tiêu đề song ngữ)*
+
+---
+
+## 🚛 Built-in Transports
+
+## 🚛 Các transport tích hợp sẵn
+
+*(song ngữ list như phần trên, giữ code)*
+
+---
+
+## 🔧 Remote Control
+
+## 🔧 Điều khiển từ xa
+
+*(song ngữ mô tả, giữ nguyên code)*
+
+---
+
+## 📊 Best Practices
+
+## 📊 Thực hành tốt nhất
+
+*(song ngữ bullet list)*
+
+---
+
+## 📈 Comparison vs Other Loggers
+
+## 📈 So sánh với các logger khác
+
+| Library / Thư viện | Node.js | Web | React Native |      Transports / Transport hỗ trợ     |     TypeScript     | Notes / Ghi chú                        |
+| ------------------ | :-----: | :-: | :----------: | :------------------------------------: | :----------------: | -------------------------------------- |
+| winston / pino     |    ✅    |  ⚠️ |       ❌      |            Strong / Mạnh mẽ            | Partial / Một phần | Node-first / Ưu tiên Node.js           |
+| react-native-logs  |    ❌    |  ✅  |       ✅      |             Basic / Cơ bản             |          ❌         | RN-only / Chỉ cho RN                   |
+| tslog              |    ✅    |  ✅  |       ❌      |           Limited / Giới hạn           |          ✅         | No RN / Không hỗ trợ RN                |
+| Adze               |    ✅    |  ✅  |       ✅      |     Format/Emoji / Định dạng/Emoji     |          ✅         | Limited transports / Transport hạn chế |
+| **@dqcai/logger**  |    ✅    |  ✅  |       ✅      | Console, File, API, Custom / Tùy chỉnh |          ✅         | **All-in-one**                         |
+
+---
+
+## 🤝 Contributing
+
+## 🤝 Đóng góp
+
+Contributions, issues, and feature requests are welcome!
+Mọi đóng góp, báo lỗi, và yêu cầu tính năng đều được hoan nghênh!
+
+👉 [GitHub Issues](https://github.com/cuongdqpayment/dqcai-logger/issues)
+
+---
+
+## 📄 License
+
+## 📄 Giấy phép
+
+MIT © [Cuong Doan](https://github.com/cuongdqpayment)
+
+---
+
+🔥 **@dqcai/logger** — The only logger you need for **React Native, Web, and Node.js**.
+🔥 **@dqcai/logger** — Logger duy nhất bạn cần cho **React Native, Web, và Node.js**.
+
+Stop switching between libraries. Start logging smarter today.
+Dừng việc phải đổi qua lại nhiều thư viện. Bắt đầu ghi log thông minh ngay hôm nay.

@@ -3,7 +3,7 @@ src/
 tsconfig.json
 rollup.config.js
 
-# Development files
+# Development files  
 .vscode/
 .idea/
 
@@ -17,3 +17,6 @@ __tests__/
 
 # Documentation source
 docs/
+
+# IMPORTANT: KHÔNG ignore lib/ trong .npmignore
+# lib/ cần được publish
