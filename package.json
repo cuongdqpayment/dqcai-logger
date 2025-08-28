@@ -1,6 +1,6 @@
 {
   "name": "@dqcai/logger",
-  "version": "1.0.8",
+  "version": "1.0.10",
   "description": "Universal Logger Library for every environment: React, React Native, Vue, Angular, Node.js, Browser",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
@@ -16,7 +16,9 @@
   },
   "typesVersions": {
     "*": {
-      "*": ["./lib/index.d.ts"]
+      "*": [
+        "./lib/index.d.ts"
+      ]
     }
   },
   "files": [
@@ -27,11 +29,12 @@
     "build": "rollup -c",
     "clean": "rimraf lib",
     "prebuild": "npm run clean",
-    "prepublishOnly": "npm run build && npm run test:all",
+    "obfuscate": "node ./scripts/obfuscate.mjs",
+    "prepublishOnly": "npm run build && npm run obfuscate && npm run test:all",
     "release": "npm publish --access public",
-    "release:patch": "npm version patch && npm run build && npm publish --access public",
+    "release:patch": "npm version patch && npm run build  && npm run obfuscate && npm publish --access public",
     "test": "npm run test:node",
-    "test:node": "node ./src/test/test-package.js", 
+    "test:node": "node ./src/test/test-package.js",
     "test:es": "node ./src/test/test-es-module.mjs",
     "test:browser": "echo 'Open ./src/test/test-browser.html in browser'",
     "test:all": "npm run test:node && npm run test:es"
@@ -41,6 +44,8 @@
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.4",
     "@types/node": "^18.0.0",
+    "javascript-obfuscator": "^4.1.1",
+    "obfuscate": "^0.0.11",
     "rimraf": "^6.0.1",
     "rollup": "^4.49.0",
     "typescript": "^5.9.2"

@@ -36,7 +36,7 @@ async function obfuscateFiles() {
   try {
     console.log('🔒 Starting code obfuscation...');
     
-    const distDir = path.resolve(__dirname, '../dist');
+    const distDir = path.resolve(__dirname, '../lib');
     console.log('📍 Debug: Resolved dist dir:', distDir);
     
     if (!fs.existsSync(distDir)) {
