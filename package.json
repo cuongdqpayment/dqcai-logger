@@ -1,6 +1,6 @@
 {
   "name": "@dqcai/logger",
-  "version": "1.0.10",
+  "version": "1.0.12",
   "description": "Universal Logger Library for every environment: React, React Native, Vue, Angular, Node.js, Browser",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
@@ -23,7 +23,8 @@
   },
   "files": [
     "lib",
-    "README.md"
+    "README.md",
+    "README-LogDecorators.md"
   ],
   "scripts": {
     "build": "rollup -c",
