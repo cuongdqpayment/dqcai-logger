@@ -1,6 +1,6 @@
 {
   "name": "@dqcai/logger",
-  "version": "1.0.12",
+  "version": "2.0.0",
   "description": "Universal Logger Library for every environment: React, React Native, Vue, Angular, Node.js, Browser",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
@@ -27,7 +27,7 @@
     "README-LogDecorators.md"
   ],
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c rollup.config.mjs",
     "clean": "rimraf lib",
     "prebuild": "npm run clean",
     "obfuscate": "node ./scripts/obfuscate.mjs",
@@ -37,18 +37,21 @@
     "test": "npm run test:node",
     "test:node": "node ./src/test/test-package.js",
     "test:es": "node ./src/test/test-es-module.mjs",
+    "test:decorator": "node ./src/test/test-decorator.js",
     "test:browser": "echo 'Open ./src/test/test-browser.html in browser'",
-    "test:all": "npm run test:node && npm run test:es"
+    "test:all": "npm run test:node && npm run test:decorator && npm run test:es"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.4",
     "@types/node": "^18.0.0",
+    "esbuild": "^0.25.9",
     "javascript-obfuscator": "^4.1.1",
     "obfuscate": "^0.0.11",
     "rimraf": "^6.0.1",
     "rollup": "^4.49.0",
+    "rollup-plugin-esbuild": "^6.2.1",
     "typescript": "^5.9.2"
   },
   "keywords": [
