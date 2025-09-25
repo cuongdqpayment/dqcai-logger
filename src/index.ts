@@ -3,30 +3,24 @@ export {
   // Core Classes
   UniversalLogger,
   ModuleLogger,
-} from './core/Logger';
+} from "./core/Logger";
 
-export {
-  BaseModule,
-} from './core/BaseModule';
+export { BaseModule } from "./core/BaseModule";
 
 export {
   // Transports
   ConsoleTransport,
   type ConsoleTransportConfig,
-} from './transports/ConsoleTransport';
+} from "./transports/ConsoleTransport";
 
-export {
-  DefaultTransportFactory,
-} from './factories/DefaultTransportFactory';
+export { DefaultTransportFactory } from "./factories/DefaultTransportFactory";
 
 export {
   // Configuration
   LoggerConfigBuilder,
-} from './config/ConfigBuilder';
+} from "./config/ConfigBuilder";
 
-export {
-  LoggerUtils,
-} from './utils/LoggerUtils';
+export { LoggerUtils } from "./utils/LoggerUtils";
 
 export {
   // Decorators
@@ -35,8 +29,8 @@ export {
   LogMethodFlow,
   LogCache,
   LogRetry,
-  EnableLogging,  
-} from './decorators/LogDecorators';
+  EnableLogging,
+} from "./decorators/LogDecorators";
 
 export {
   // Types
@@ -46,25 +40,21 @@ export {
   type ModuleConfig,
   type ILogTransport,
   type ITransportFactory,
-} from './types/Logger.types';
+} from "./types/Logger.types";
 
 // Default instance creator
-import { UniversalLogger } from './core/Logger';
-import { ConsoleTransport } from './transports/ConsoleTransport';
-import { LoggerUtils } from './utils/LoggerUtils';
-import { LoggerConfig } from './types/Logger.types';
-
+import { UniversalLogger } from "./core/Logger";
+import { ConsoleTransport } from "./transports/ConsoleTransport";
+import { LoggerUtils } from "./utils/LoggerUtils";
+import { LoggerConfig } from "./types/Logger.types";
 
 // Factory mặc định
-export * from './factories/DefaultTransportFactory';
+export * from "./factories/DefaultTransportFactory";
 
-
-export const createLogger = (config?: LoggerConfig): UniversalLogger => {
-  const defaultConfig = config || LoggerUtils.createDevelopmentConfig();
-  const logger = new UniversalLogger(defaultConfig);
-  
-  // Add default console transport
-  logger.addTransport(new ConsoleTransport());
-  
-  return logger;
-};
+// LoggerTools
+export {
+  createLogger,
+  CommonLoggerConfig,
+  CommonModules,
+  createModuleLogger,
+} from "./config/logger-config";

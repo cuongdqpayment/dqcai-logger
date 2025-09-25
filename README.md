@@ -1,4 +1,4 @@
-﻿# @dqcai/logger@2.0.0
+﻿# @dqcai/logger@2.1.0
 
 🚀 **Universal Logging Library for JavaScript & TypeScript**
 
@@ -30,6 +30,7 @@ When building apps across **multiple environments** (Web, Node.js, React Native)
 * 💡 **TypeScript-first** → Strongly typed, tree-shakable, ESM & CJS ready
 * ⚡ **Zero dependencies** → Lightweight, only optional peer deps
 * 🎨 **Logger Decorators** → Advanced patterns for method logging, performance monitoring, caching, and retry logic
+* 🏗️ **Global Configuration** → Centralized logger management with CommonLoggerConfig (v2.1.0+)
 
 > 🏆 Instead of juggling `winston`, `pino`, and `react-native-logs`, use **one consistent solution** across all platforms.
 
@@ -59,16 +60,131 @@ npm install axios
 
 ## 🚀 Quick Start
 
-### Basic Example
+### 🆕 v2.1.0 - Recommended Setup (Global Configuration)
+
+Create a centralized logger configuration file in your project:
 
 ```typescript
-import { createLogger } from '@dqcai/logger';
+// ./src/configs/logger.ts
+import {
+  LoggerConfigBuilder,
+  CommonLoggerConfig,
+  CommonModules,
+  createModuleLogger,
+} from "@dqcai/logger";
 
-const logger = createLogger();
+// Define your application modules
+const AppModules = {
+  ...CommonModules,
+  I18N_CLIENT: "I18next-client",
+  I18N_PROVIDER: "I18next-provider", 
+  I18N_SERVER: "I18next-server",
+  CONTEXT: "Context",
+  AUTH: "Authentication",
+  DATABASE: "Database",
+  API: "ApiService",
+  MIDDLEWARE: "Middleware",
+  UTILS: "Utils"
+};
 
-logger.info('App', '🚀 Application started');
-logger.error('App', 'Something went wrong', { error: 'details' });
-logger.debug('App', 'Debugging info', { userId: 123 });
+// Create global configuration
+const config = new LoggerConfigBuilder()
+  .setEnabled(true)
+  .setDefaultLevel("trace")  // Available: trace, debug, info, warn, error
+  .addModule(AppModules.AUTH, true, ["info", "warn", "error"], ["console"])
+  .addModule(AppModules.DATABASE, true, ["debug", "info", "error"], ["console", "file"])
+  .build();
+
+// Apply configuration globally
+CommonLoggerConfig.updateConfiguration(config);
+
+// Export for use throughout your application
+export { createModuleLogger, AppModules };
+
+/**
+ * Basic Usage:
+ * Simply import and use logger.trace/debug/info/warn/error instead of console.log/debug/warn/error
+ * 
+ * import { createModuleLogger, AppModules } from "@/configs/logger";
+ * 
+ * const logger = createModuleLogger(AppModules.MIDDLEWARE);
+ * logger.trace("Middleware importing...");
+ * logger.info("User authenticated successfully", { userId: 123 });
+ * logger.error("Database connection failed", { error: "Connection timeout" });
+ */
+```
+
+### Using the Global Configuration
+
+```typescript
+// ./src/services/authService.ts
+import { createModuleLogger, AppModules } from "@/configs/logger";
+
+const logger = createModuleLogger(AppModules.AUTH);
+
+class AuthService {
+  async login(credentials: { email: string; password: string }) {
+    logger.trace("Login attempt started");
+    logger.info("User login attempt", { email: credentials.email });
+    
+    try {
+      // Authentication logic here
+      const user = await this.authenticate(credentials);
+      
+      logger.info("Login successful", { 
+        userId: user.id, 
+        email: user.email 
+      });
+      
+      return user;
+    } catch (error) {
+      logger.error("Login failed", { 
+        email: credentials.email,
+        error: error.message 
+      });
+      throw error;
+    }
+  }
+  
+  private async authenticate(credentials: any) {
+    logger.debug("Authenticating user credentials");
+    // Authentication implementation
+    return { id: 1, email: credentials.email };
+  }
+}
+```
+
+```typescript
+// ./src/middleware/requestLogger.ts
+import { createModuleLogger, AppModules } from "@/configs/logger";
+
+const logger = createModuleLogger(AppModules.MIDDLEWARE);
+
+export function requestLoggerMiddleware(req: any, res: any, next: any) {
+  logger.trace("Middleware importing...");
+  
+  const start = Date.now();
+  
+  logger.info("Request received", {
+    method: req.method,
+    url: req.url,
+    userAgent: req.get('User-Agent'),
+    ip: req.ip
+  });
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    
+    logger.info("Request completed", {
+      method: req.method,
+      url: req.url,
+      statusCode: res.statusCode,
+      duration: `${duration}ms`
+    });
+  });
+
+  next();
+}
 ```
 
 ### Using BaseModule

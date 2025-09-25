@@ -2,14 +2,7 @@ import {BaseModule, LoggerConfigBuilder, createLogger } from '..';
 const config = new LoggerConfigBuilder()
   .setEnabled(true)
   .setDefaultLevel('error') //phun lỗi toàn cục từ mốc trace->error
-  // .addModule('App', true, ['info','warn','error'], ['console'])
-  // .addModule('GlobalModal', true, ['info','warn','error'], ['console'])
-  // .addModule('ModalManager', true, ['info','warn','error'], ['console'])
-  // .addModule('DatabaseContent', true, ['warn','error'], ['console'])
-  // .addModule('DatabaseManager', true, ['info','warn','error'], ['console','file'])
-  // .addModule('DatabaseFactory', true, ['info','warn','error'], ['console'])
   .addModule('SQLiteDAO', true, ['debug','info','warn','error'], ['console'])
-
   // .addModule('ApiClient', false) // Completely disabled
   // .addModule('AuthService', true, ['error'], ['console','api'])
   .build();
