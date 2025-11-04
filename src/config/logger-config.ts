@@ -1,3 +1,4 @@
+// in @dqcai/logger library
 // ./src/config/logger-config.ts
 import { LoggerConfig } from "../types/Logger.types";
 import { UniversalLogger } from "../core/Logger";
@@ -70,7 +71,6 @@ class LoggerProxy implements ModuleLogger {
 export class CommonLoggerConfig {
   private static instance: UniversalLogger | null = null;
   private static currentConfig: any = null;
-  // Track proxy instances for debugging
   public static proxyInstances: Map<string, LoggerProxy> = new Map();
 
   static createDefaultConfig() {
@@ -83,26 +83,38 @@ export class CommonLoggerConfig {
   static initialize(customConfig?: any): UniversalLogger {
     const config = customConfig || CommonLoggerConfig.createDefaultConfig();
     CommonLoggerConfig.currentConfig = config;
-
     CommonLoggerConfig.instance = createLogger(config);
     return CommonLoggerConfig.instance;
   }
 
+  // ✅ FIX: Luôn trả về instance hiện tại
   static getInstance(): UniversalLogger {
     if (!CommonLoggerConfig.instance) {
-      return CommonLoggerConfig.initialize();
+      CommonLoggerConfig.initialize();
     }
-    return CommonLoggerConfig.instance;
+    // ✅ QUAN TRỌNG: Luôn trả về instance hiện tại, không cache
+    return CommonLoggerConfig.instance!;
   }
 
   /**
-   * Update configuration - proxy pattern automatically handles updates
+   * ✅ FIX: Update configuration - FORCE recreation
    */
   static updateConfiguration(newConfig: any): void {
+    console.log("🔄 [CommonLoggerConfig] Updating configuration:", newConfig);
+
     CommonLoggerConfig.currentConfig = newConfig;
+
+    // ✅ FORCE tạo lại instance mới
     CommonLoggerConfig.instance = createLogger(newConfig);
+
+    // ✅ Log để verify
+    console.log("✅ [CommonLoggerConfig] New instance created with config:", {
+      enabled: newConfig.enabled,
+      defaultLevel: newConfig.defaultLevel,
+    });
   }
 
+  // Rest of the code remains the same...
   static setEnabled(enabled: boolean): void {
     if (CommonLoggerConfig.currentConfig) {
       CommonLoggerConfig.currentConfig.enabled = enabled;
@@ -158,16 +170,10 @@ export class CommonLoggerConfig {
     return CommonLoggerConfig.initialize();
   }
 
-  /**
-   * Get active proxy modules
-   */
   static getActiveProxyModules(): string[] {
     return Array.from(CommonLoggerConfig.proxyInstances.keys());
   }
 
-  /**
-   * Get current configuration (for debugging)
-   */
   static getCurrentConfig(): any {
     return CommonLoggerConfig.currentConfig
       ? { ...CommonLoggerConfig.currentConfig }

@@ -20,6 +20,6 @@
     "outDir": "lib",
     "jsx": "react-native"
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "lib", "**/*.test.ts", "src/test/**/*"]
+  "include": ["src/**/*", "test"],
+  "exclude": ["node_modules", "lib", "**/*.test.ts", "test/**/*"]
 }

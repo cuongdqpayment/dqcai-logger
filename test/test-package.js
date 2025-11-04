@@ -36,7 +36,7 @@ try {
 
     // Factory function
     createLogger
-  } = require('../../lib/index'); // Sử dụng built package
+  } = require('../lib/index'); // Sử dụng built package
 
   console.log('✅ All imports successful!\n');
 
@@ -118,7 +118,7 @@ console.log('🌐 Environment Compatibility Tests:\n');
 // Test CommonJS
 console.log('📦 CommonJS Test:');
 try {
-  const cjsModule = require('../../lib/index');
+  const cjsModule = require('../lib/index');
   console.log('- CommonJS import:', !!cjsModule.createLogger);
   console.log('✅ CommonJS compatible\n');
 } catch (error) {
