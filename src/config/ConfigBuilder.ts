@@ -1,5 +1,5 @@
 ﻿// config/ConfigBuilder.ts - Configuration Builder
-import { LoggerConfig, LogLevel, ModuleConfig } from '../types/Logger.types';
+import { LoggerConfig, LogLevel } from '@/types/Logger.types';
 
 export class LoggerConfigBuilder {
   private config: LoggerConfig;

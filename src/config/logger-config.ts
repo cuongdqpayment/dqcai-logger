@@ -181,7 +181,9 @@ export class CommonLoggerConfig {
   }
 }
 
-export const CommonLogger = CommonLoggerConfig.getInstance();
+export const getCommonLogger = (): UniversalLogger => {
+  return CommonLoggerConfig.getInstance();
+};
 
 /**
  * Create module logger using proxy pattern - automatically updates when configuration changes

@@ -18,7 +18,19 @@
     "declarationMap": true,
     "rootDir": "./src",
     "outDir": "lib",
-    "jsx": "react-native"
+    "jsx": "react-native",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/config/*": ["src/config/*"],
+      "@/core/*": ["src/core/*"],
+      "@/logger/*": ["src/logger/*"],
+      "@/decorators/*": ["src/decorators/*"],
+      "@/factories/*": ["src/factories/*"],
+      "@/transports/*": ["src/transports/*"],
+      "@/types/*": ["src/types/*"],
+      "@/utils/*": ["src/utils/*"]
+    }
   },
   "include": ["src/**/*", "test"],
   "exclude": ["node_modules", "lib", "**/*.test.ts", "test/**/*"]

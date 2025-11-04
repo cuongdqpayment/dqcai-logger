@@ -42,12 +42,6 @@ export {
   type ITransportFactory,
 } from "./types/Logger.types";
 
-// Default instance creator
-import { UniversalLogger } from "./core/Logger";
-import { ConsoleTransport } from "./transports/ConsoleTransport";
-import { LoggerUtils } from "./utils/LoggerUtils";
-import { LoggerConfig } from "./types/Logger.types";
-
 // Factory mặc định
 export * from "./factories/DefaultTransportFactory";
 
