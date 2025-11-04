@@ -36,7 +36,7 @@ try {
 
     // Factory function
     createLogger
-  } = require('../lib/index'); // Sử dụng built package
+  } = require('@dqcai/logger'); // Sử dụng built package
 
   console.log('✅ All imports successful!\n');
 

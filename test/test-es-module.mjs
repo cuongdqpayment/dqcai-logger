@@ -3,7 +3,7 @@ import {
   ModuleLogger,
   createLogger,
   LoggerUtils
-} from '../../lib/index.mjs';
+} from '@dqcai/logger';
 
 console.log('🧪 ES Module Test Starting...');
 

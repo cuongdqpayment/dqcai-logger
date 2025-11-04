@@ -9,7 +9,7 @@ const {
   LogRetry,
   EnableLogging,
   BaseModule
-} = require('../../lib');
+} = require('@dqcai/logger');
 
 // Utility function to simulate async delay
 function delay(ms) {

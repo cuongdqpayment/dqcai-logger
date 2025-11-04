@@ -35,10 +35,10 @@
     "release": "npm publish --access public",
     "release:patch": "npm version patch && npm run build  && npm run obfuscate && npm publish --access public",
     "test": "npm run test:node",
-    "test:node": "node ./src/test/test-package.js",
-    "test:es": "node ./src/test/test-es-module.mjs",
-    "test:decorator": "node ./src/test/test-decorator.js",
-    "test:browser": "echo 'Open ./src/test/test-browser.html in browser'",
+    "test:node": "node ./test/test-package.js",
+    "test:es": "node ./test/test-es-module.mjs",
+    "test:decorator": "node ./test/test-decorator.js",
+    "test:browser": "echo 'Open ./test/test-browser.html in browser'",
     "test:all": "npm run test:node && npm run test:decorator && npm run test:es"
   },
   "devDependencies": {
