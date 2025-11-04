@@ -71,6 +71,7 @@ class LoggerProxy implements ModuleLogger {
 export class CommonLoggerConfig {
   private static instance: UniversalLogger | null = null;
   private static currentConfig: any = null;
+  private static isInitializing = false;
   public static proxyInstances: Map<string, LoggerProxy> = new Map();
 
   static createDefaultConfig() {
@@ -81,37 +82,60 @@ export class CommonLoggerConfig {
   }
 
   static initialize(customConfig?: any): UniversalLogger {
+    // ✅ Nếu đang khởi tạo, đợi xong rồi return
+    if (CommonLoggerConfig.isInitializing) {
+      // Busy wait (not ideal but safe for synchronous code)
+      while (CommonLoggerConfig.isInitializing) {
+        // Wait
+      }
+      return CommonLoggerConfig.instance!;
+    }
+
+    // ✅ Nếu đã có instance và config không đổi, return luôn
+    if (CommonLoggerConfig.instance && !customConfig) {
+      return CommonLoggerConfig.instance;
+    }
+
+    CommonLoggerConfig.isInitializing = true;
+
     const config = customConfig || CommonLoggerConfig.createDefaultConfig();
     CommonLoggerConfig.currentConfig = config;
     CommonLoggerConfig.instance = createLogger(config);
+
+    CommonLoggerConfig.isInitializing = false;
+
     return CommonLoggerConfig.instance;
   }
 
-  // ✅ FIX: Luôn trả về instance hiện tại
   static getInstance(): UniversalLogger {
     if (!CommonLoggerConfig.instance) {
-      CommonLoggerConfig.initialize();
+      return CommonLoggerConfig.initialize();
     }
-    // ✅ QUAN TRỌNG: Luôn trả về instance hiện tại, không cache
-    return CommonLoggerConfig.instance!;
+    return CommonLoggerConfig.instance;
   }
 
-  /**
-   * ✅ FIX: Update configuration - FORCE recreation
-   */
   static updateConfiguration(newConfig: any): void {
-    console.log("🔄 [CommonLoggerConfig] Updating configuration:", newConfig);
+    //  console.log("🔄 [CommonLoggerConfig] Updating configuration:", newConfig);
+
+    // ✅ Nếu config giống hệt, skip
+    const current = CommonLoggerConfig.currentConfig;
+    if (
+      current &&
+      current.enabled === newConfig.enabled &&
+      current.defaultLevel === newConfig.defaultLevel &&
+      JSON.stringify(current.modules) === JSON.stringify(newConfig.modules)
+    ) {
+      // console.log("⏭️ [CommonLoggerConfig] Config unchanged, skipping");
+      return;
+    }
 
     CommonLoggerConfig.currentConfig = newConfig;
-
-    // ✅ FORCE tạo lại instance mới
     CommonLoggerConfig.instance = createLogger(newConfig);
 
-    // ✅ Log để verify
-    console.log("✅ [CommonLoggerConfig] New instance created with config:", {
-      enabled: newConfig.enabled,
-      defaultLevel: newConfig.defaultLevel,
-    });
+    // console.log("✅ [CommonLoggerConfig] New instance created with config:", {
+    //   enabled: newConfig.enabled,
+    //   defaultLevel: newConfig.defaultLevel,
+    // });
   }
 
   // Rest of the code remains the same...
