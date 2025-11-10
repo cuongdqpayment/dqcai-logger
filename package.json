@@ -1,6 +1,6 @@
 {
   "name": "@dqcai/logger",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "description": "Universal Logger Library for every environment: React, React Native, Vue, Angular, Node.js, Browser",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
