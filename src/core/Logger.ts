@@ -5,13 +5,57 @@
   ModuleConfig,
   ILogTransport,
   ITransportFactory,
-} from '../types/Logger.types';
+} from "../types/Logger.types";
 
-// Utility function to format multiple arguments into a single message
+/**
+ * Fix lỗi xử lý bigint trong lúc JSON.stringify
+ * @param args 
+ * @returns 
+ */
 const formatLogMessage = (...args: any[]): string => {
-  return args.map(arg => 
-    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-  ).join(' ');
+  return args
+    .map((arg) => {
+      // Handle BigInt directly
+      if (typeof arg === "bigint") {
+        return arg.toString();
+      }
+
+      // Handle objects with custom replacer
+      if (typeof arg === "object" && arg !== null) {
+        try {
+          return JSON.stringify(
+            arg,
+            (key, value) => {
+              // Handle BigInt in nested objects
+              if (typeof value === "bigint") {
+                return value.toString();
+              }
+              // Handle Date
+              if (value instanceof Date) {
+                return value.toISOString();
+              }
+              // Handle Buffer
+              if (typeof Buffer !== "undefined" && Buffer.isBuffer(value)) {
+                return `<Buffer ${value.length} bytes>`;
+              }
+              // Handle Function
+              if (typeof value === "function") {
+                return `<Function ${value.name || "anonymous"}>`;
+              }
+              return value;
+            },
+            2
+          );
+        } catch (error) {
+          // Fallback nếu JSON.stringify fail
+          return `<Error stringifying: ${(error as Error).message}>`;
+        }
+      }
+
+      // Handle primitives
+      return String(arg);
+    })
+    .join(" ");
 };
 
 export class UniversalLogger {
@@ -86,7 +130,7 @@ export class UniversalLogger {
   }
 
   public setMetadata(metadata: Record<string, any>): void {
-    this.config.metadata = {...this.config.metadata, ...metadata};
+    this.config.metadata = { ...this.config.metadata, ...metadata };
   }
 
   // Logging Logic
@@ -103,7 +147,7 @@ export class UniversalLogger {
   }
 
   private isLevelEnabled(level: LogLevel, threshold: LogLevel): boolean {
-    const levels: LogLevel[] = ['trace', 'debug', 'info', 'warn', 'error'];
+    const levels: LogLevel[] = ["trace", "debug", "info", "warn", "error"];
     const levelIndex = levels.indexOf(level);
     const thresholdIndex = levels.indexOf(threshold);
 
@@ -118,29 +162,29 @@ export class UniversalLogger {
 
   private getTransportsForModule(module: string): ILogTransport[] {
     const moduleConfig = this.config.modules[module];
-    const transportNames = moduleConfig?.transports || ['console'];
+    const transportNames = moduleConfig?.transports || ["console"];
 
     return transportNames
-      .map(name => this.transports.get(name))
+      .map((name) => this.transports.get(name))
       .filter(
-        (transport): transport is ILogTransport => transport !== undefined,
+        (transport): transport is ILogTransport => transport !== undefined
       );
   }
 
   private async sendToTransports(
     entry: LogEntry,
-    transports: ILogTransport[],
+    transports: ILogTransport[]
   ): Promise<void> {
     if (transports.length === 0) return;
 
-    const promises = transports.map(async transport => {
+    const promises = transports.map(async (transport) => {
       try {
         await transport.log(entry);
       } catch (error) {
         // Fallback to console if transport fails
         console.error(
           `[UniversalLogger] Transport ${transport.name} failed:`,
-          error,
+          error
         );
       }
     });
@@ -153,7 +197,7 @@ export class UniversalLogger {
     module: string,
     level: LogLevel,
     message: string,
-    data?: any,
+    data?: any
   ): Promise<void> {
     if (!this.shouldLog(module, level)) return;
 
@@ -173,35 +217,35 @@ export class UniversalLogger {
 
   public async trace(module: string, ...args: any[]): Promise<void> {
     const message = formatLogMessage(...args);
-    await this.log(module, 'trace', message);
+    await this.log(module, "trace", message);
   }
 
   public async debug(module: string, ...args: any[]): Promise<void> {
     const message = formatLogMessage(...args);
-    await this.log(module, 'debug', message);
+    await this.log(module, "debug", message);
   }
 
   public async info(module: string, ...args: any[]): Promise<void> {
     const message = formatLogMessage(...args);
-    await this.log(module, 'info', message);
+    await this.log(module, "info", message);
   }
 
   public async warn(module: string, ...args: any[]): Promise<void> {
     const message = formatLogMessage(...args);
-    await this.log(module, 'warn', message);
+    await this.log(module, "warn", message);
   }
 
   public async error(module: string, ...args: any[]): Promise<void> {
     const message = formatLogMessage(...args);
-    await this.log(module, 'error', message);
+    await this.log(module, "error", message);
   }
 
   // Utility Methods
   public async flush(): Promise<void> {
     const transports = Array.from(this.transports.values());
     const flushPromises = transports
-      .filter(transport => typeof transport.flush === 'function')
-      .map(transport => transport.flush!());
+      .filter((transport) => typeof transport.flush === "function")
+      .map((transport) => transport.flush!());
 
     await Promise.allSettled(flushPromises);
   }
@@ -209,8 +253,8 @@ export class UniversalLogger {
   public async cleanup(): Promise<void> {
     const transports = Array.from(this.transports.values());
     const cleanupPromises = transports
-      .filter(transport => typeof transport.cleanup === 'function')
-      .map(transport => transport.cleanup!());
+      .filter((transport) => typeof transport.cleanup === "function")
+      .map((transport) => transport.cleanup!());
 
     await Promise.allSettled(cleanupPromises);
   }
@@ -232,7 +276,7 @@ export class ModuleLogger {
   public async flush(): Promise<void> {
     await this.logger.flush();
   }
-  
+
   public async trace(...args: any[]): Promise<void> {
     const message = formatLogMessage(...args);
     await this.logger.trace(this.module, message);
