@@ -1,8 +1,8 @@
-﻿# @dqcai/logger@2.1.0
+﻿# @dqcai/logger@3.0.0
 
 🚀 **Universal Logging Library for JavaScript & TypeScript**
 
-Cross-platform logging for **Node.js, Web, and React Native** with advanced decorator patterns and flexible configuration.
+Cross-platform logging for **Node.js, Web, React Native, and Electron** with advanced transport system, decorator patterns, and flexible configuration.
 
 The most **flexible, modern, and developer-friendly logger** for real-world projects.
 
@@ -16,21 +16,38 @@ The most **flexible, modern, and developer-friendly logger** for real-world proj
 
 ---
 
+## ✨ What's New in v3.0.0?
+
+### 🚀 Major Features
+
+* **🗄️ Database Transport** → Store logs in SQLite, PostgreSQL, MySQL, MongoDB
+* **🌐 API Transport** → Send logs to remote logging services
+* **⚡ Environment-Specific Transports** → Optimized for Node.js, React Native, Electron
+* **🔌 Dynamic Import** → Load third-party dependencies only when needed
+* **🛠️ Custom Transport API** → Build your own transport with simple interface
+* **📊 Built-in Statistics** → Track log metrics and performance
+* **🔄 Session Tracking** → Group logs by session ID
+* **⚙️ Auto-cleanup** → Manage log retention and file rotation
+
+---
+
 ## ✨ Why @dqcai/logger?
 
-When building apps across **multiple environments** (Web, Node.js, React Native), logging is often fragmented and inconsistent.
+When building apps across **multiple environments** (Web, Node.js, React Native, Electron), logging is often fragmented and inconsistent.
 
 `@dqcai/logger` solves this with a **single, unified API** and **pluggable transports** that work everywhere:
 
-* 🌍 **Cross-platform** → One library for Web, Node.js, React Native
+* 🌍 **Cross-platform** → One library for Web, Node.js, React Native, Electron
 * 🛠 **Flexible configuration** → Control logs by **module, log level, transport**
-* 📂 **Multiple transports** → Console, File, API, or custom transport
+* 📂 **Multiple transports** → Console, File, Database, API, or custom transport
+* 🗄️ **Database logging** → Built-in support for SQLite, PostgreSQL, MySQL, MongoDB
+* 🌐 **API logging** → Send logs to remote services with batching and retry
 * 🔧 **Runtime control** → Enable/disable logs dynamically
 * 🎯 **Module-based logging** → Organize logs per feature/service
 * 💡 **TypeScript-first** → Strongly typed, tree-shakable, ESM & CJS ready
-* ⚡ **Zero dependencies** → Lightweight, only optional peer deps
+* ⚡ **Smart dependencies** → Dynamic imports, zero overhead for unused features
 * 🎨 **Logger Decorators** → Advanced patterns for method logging, performance monitoring, caching, and retry logic
-* 🏗️ **Global Configuration** → Centralized logger management with CommonLoggerConfig (v2.1.0+)
+* 🏗️ **Global Configuration** → Centralized logger management with CommonLoggerConfig
 
 > 🏆 Instead of juggling `winston`, `pino`, and `react-native-logs`, use **one consistent solution** across all platforms.
 
@@ -46,21 +63,29 @@ yarn add @dqcai/logger
 pnpm add @dqcai/logger
 ```
 
-**Optional transports**
+### Optional Dependencies (Auto-loaded when needed)
 
 ```bash
-# React Native file logging
-npm install react-native-fs
+# Database Transport
+npm install @dqcai/orm  # For database logging
 
-# API transport
-npm install axios
+# React Native File Transport
+npm install react-native-fs  # For React Native file logging
+
+# API Transport
+npm install axios  # For HTTP logging
+
+# Electron File Transport
+# No additional dependencies needed - uses Electron's native APIs
 ```
+
+**Note:** Third-party dependencies are loaded dynamically only when you use the corresponding transport. This keeps your bundle size minimal.
 
 ---
 
 ## 🚀 Quick Start
 
-### 🆕 v2.1.0 - Recommended Setup (Global Configuration)
+### 🆕 v3.0.0 - Recommended Setup (Global Configuration)
 
 Create a centralized logger configuration file in your project:
 
@@ -76,10 +101,6 @@ import {
 // Define your application modules
 const AppModules = {
   ...CommonModules,
-  I18N_CLIENT: "I18next-client",
-  I18N_PROVIDER: "I18next-provider", 
-  I18N_SERVER: "I18next-server",
-  CONTEXT: "Context",
   AUTH: "Authentication",
   DATABASE: "Database",
   API: "ApiService",
@@ -90,9 +111,10 @@ const AppModules = {
 // Create global configuration
 const config = new LoggerConfigBuilder()
   .setEnabled(true)
-  .setDefaultLevel("trace")  // Available: trace, debug, info, warn, error
-  .addModule(AppModules.AUTH, true, ["info", "warn", "error"], ["console"])
-  .addModule(AppModules.DATABASE, true, ["debug", "info", "error"], ["console", "file"])
+  .setDefaultLevel("info")
+  .addModule(AppModules.AUTH, true, ["info", "warn", "error"], ["console", "db"])
+  .addModule(AppModules.DATABASE, true, ["debug", "info", "error"], ["console", "node-file"])
+  .addModule(AppModules.API, true, ["info", "warn", "error"], ["console", "api"])
   .build();
 
 // Apply configuration globally
@@ -100,18 +122,6 @@ CommonLoggerConfig.updateConfiguration(config);
 
 // Export for use throughout your application
 export { createModuleLogger, AppModules };
-
-/**
- * Basic Usage:
- * Simply import and use logger.trace/debug/info/warn/error instead of console.log/debug/warn/error
- * 
- * import { createModuleLogger, AppModules } from "@/configs/logger";
- * 
- * const logger = createModuleLogger(AppModules.MIDDLEWARE);
- * logger.trace("Middleware importing...");
- * logger.info("User authenticated successfully", { userId: 123 });
- * logger.error("Database connection failed", { error: "Connection timeout" });
- */
 ```
 
 ### Using the Global Configuration
@@ -124,18 +134,11 @@ const logger = createModuleLogger(AppModules.AUTH);
 
 class AuthService {
   async login(credentials: { email: string; password: string }) {
-    logger.trace("Login attempt started");
     logger.info("User login attempt", { email: credentials.email });
     
     try {
-      // Authentication logic here
       const user = await this.authenticate(credentials);
-      
-      logger.info("Login successful", { 
-        userId: user.id, 
-        email: user.email 
-      });
-      
+      logger.info("Login successful", { userId: user.id });
       return user;
     } catch (error) {
       logger.error("Login failed", { 
@@ -145,1753 +148,1249 @@ class AuthService {
       throw error;
     }
   }
-  
-  private async authenticate(credentials: any) {
-    logger.debug("Authenticating user credentials");
-    // Authentication implementation
-    return { id: 1, email: credentials.email };
-  }
 }
 ```
 
+---
+
+## 🚛 Transport System
+
+### Transport Architecture
+
+@dqcai/logger v3.0 introduces a powerful transport system that allows you to send logs to multiple destinations simultaneously. Each transport is independent and can be configured separately.
+
+**Key Features:**
+- ✅ Multiple transports active simultaneously
+- ✅ Environment-specific optimizations
+- ✅ Dynamic dependency loading
+- ✅ Automatic batching and buffering
+- ✅ Built-in retry mechanisms
+- ✅ Session tracking
+- ✅ Statistics and monitoring
+
+### Available Transports
+
+| Transport | Platform | Use Case | Dependencies |
+|-----------|----------|----------|--------------|
+| **ConsoleTransport** | All | Development, debugging | None |
+| **NodeFileTransport** | Node.js | Server logs, audit trails | None (uses `fs`) |
+| **RNFileTransport** | React Native | Mobile app logs | `react-native-fs` |
+| **ElectronFileTransport** | Electron | Desktop app logs | None (uses Electron API) |
+| **DBTransport** | All | Structured logging, analytics | `@dqcai/orm` |
+| **ApiTransport** | All | Remote logging, monitoring | `axios` |
+| **Custom** | All | Your specific needs | As needed |
+
+---
+
+## 📂 Built-in Transports
+
+### 1. ConsoleTransport (Default)
+
+The simplest transport for console output. Works everywhere.
+
 ```typescript
-// ./src/middleware/requestLogger.ts
-import { createModuleLogger, AppModules } from "@/configs/logger";
+import { ConsoleTransport, CommonLoggerConfig } from "@dqcai/logger";
 
-const logger = createModuleLogger(AppModules.MIDDLEWARE);
+const consoleTransport = new ConsoleTransport();
+CommonLoggerConfig.addTransport(consoleTransport);
+```
 
-export function requestLoggerMiddleware(req: any, res: any, next: any) {
-  logger.trace("Middleware importing...");
-  
-  const start = Date.now();
-  
-  logger.info("Request received", {
-    method: req.method,
-    url: req.url,
-    userAgent: req.get('User-Agent'),
-    ip: req.ip
-  });
+**Features:**
+- ✅ Zero dependencies
+- ✅ Colored output (in supported terminals)
+- ✅ Minimal overhead
+- ✅ Perfect for development
 
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    
-    logger.info("Request completed", {
-      method: req.method,
-      url: req.url,
-      statusCode: res.statusCode,
-      duration: `${duration}ms`
-    });
-  });
+---
 
-  next();
+### 2. NodeFileTransport (Node.js)
+
+High-performance file logging for Node.js applications with automatic rotation.
+
+```typescript
+import { NodeFileTransport, CommonLoggerConfig } from "@dqcai/logger";
+
+const fileTransport = new NodeFileTransport({
+  filePath: "./logs/app.log",
+  maxFileSize: 10 * 1024 * 1024, // 10MB
+  maxFiles: 5, // Keep 5 rotated files
+  enableInternalLogging: false
+});
+
+CommonLoggerConfig.addTransport(fileTransport);
+```
+
+**Configuration Options:**
+
+```typescript
+interface NodeFileTransportConfig {
+  filePath: string;              // Path to log file
+  maxFileSize?: number;          // Max size before rotation (default: 10MB)
+  maxFiles?: number;             // Number of rotated files to keep (default: 5)
+  enableInternalLogging?: boolean; // Log transport operations (default: false)
 }
 ```
 
-### Using BaseModule
+**Features:**
+- ✅ Automatic file rotation when size limit reached
+- ✅ Configurable retention policy
+- ✅ High-performance async I/O
+- ✅ JSON format for easy parsing
+- ✅ No external dependencies
+
+**Example Usage:**
 
 ```typescript
-import { BaseModule, createLogger } from '@dqcai/logger';
+import { createModuleLogger, CommonLoggerConfig } from "@dqcai/logger";
+import { NodeFileTransport } from "@dqcai/logger";
 
-const logger = createLogger();
+// Setup transport
+const fileTransport = new NodeFileTransport({
+  filePath: "./logs/server.log",
+  maxFileSize: 5 * 1024 * 1024, // 5MB
+  maxFiles: 10
+});
 
-class DatabaseManager extends BaseModule {
-  constructor() {
-    super('DatabaseManager', logger);
+CommonLoggerConfig.addTransport(fileTransport);
+
+// Use logger
+const logger = createModuleLogger("ServerApp");
+
+logger.info("Server started", { port: 3000 });
+logger.error("Database connection failed", { 
+  error: "ECONNREFUSED",
+  host: "localhost" 
+});
+
+// Flush logs before shutdown
+await CommonLoggerConfig.flush();
+
+// Read logs programmatically
+const logs = await fileTransport.getLogs();
+logs.forEach(content => {
+  const lines = content.split('\n').filter(l => l.trim());
+  lines.forEach(line => {
+    const entry = JSON.parse(line);
+    console.log(`[${entry.level}] ${entry.message}`);
+  });
+});
+
+// Clear old logs
+await fileTransport.clearLogs();
+```
+
+**File Rotation Example:**
+
+```
+logs/
+├── app.log              ← Current log file
+├── app.log.1            ← Most recent rotation
+├── app.log.2
+├── app.log.3
+├── app.log.4
+└── app.log.5            ← Oldest rotation (will be deleted next)
+```
+
+---
+
+### 3. RNFileTransport (React Native)
+
+Optimized file logging for React Native applications.
+
+```typescript
+import { RNFileTransport, CommonLoggerConfig } from "@dqcai/logger";
+
+const rnFileTransport = new RNFileTransport({
+  fileName: "app.log",
+  maxFileSize: 5 * 1024 * 1024, // 5MB
+  enableInternalLogging: false
+});
+
+CommonLoggerConfig.addTransport(rnFileTransport);
+```
+
+**Configuration Options:**
+
+```typescript
+interface RNFileTransportConfig {
+  fileName?: string;             // Log filename (default: 'app.log')
+  maxFileSize?: number;          // Max size before rotation (default: 10MB)
+  enableInternalLogging?: boolean; // Log transport operations (default: false)
+}
+```
+
+**Features:**
+- ✅ Uses `react-native-fs` for file operations
+- ✅ Automatic file rotation
+- ✅ Works on both iOS and Android
+- ✅ Persists across app restarts
+
+**Installation:**
+
+```bash
+npm install react-native-fs
+# iOS
+cd ios && pod install
+```
+
+**Example Usage:**
+
+```typescript
+import { createModuleLogger, CommonLoggerConfig } from "@dqcai/logger";
+import { RNFileTransport } from "@dqcai/logger";
+import RNFS from "react-native-fs";
+
+// Setup transport
+const rnTransport = new RNFileTransport({
+  fileName: "myapp.log",
+  maxFileSize: 3 * 1024 * 1024 // 3MB
+});
+
+CommonLoggerConfig.addTransport(rnTransport);
+
+// Use logger
+const logger = createModuleLogger("MobileApp");
+
+logger.info("App launched", { version: "1.0.0" });
+logger.warn("Low storage", { available: "50MB" });
+
+// Export logs for user
+const exportLogs = async () => {
+  const logs = await rnTransport.getLogs();
+  const logPath = `${RNFS.DocumentDirectoryPath}/exported-logs.txt`;
+  await RNFS.writeFile(logPath, logs.join('\n\n'), 'utf8');
+  // Share file with user...
+};
+```
+
+---
+
+### 4. ElectronFileTransport (Electron)
+
+Specialized transport for Electron desktop applications.
+
+```typescript
+import { ElectronFileTransport, CommonLoggerConfig } from "@dqcai/logger";
+
+const electronTransport = new ElectronFileTransport({
+  fileName: "app.log",
+  maxFileSize: 10 * 1024 * 1024, // 10MB
+  maxFiles: 5,
+  enableInternalLogging: false
+});
+
+CommonLoggerConfig.addTransport(electronTransport);
+```
+
+**Configuration Options:**
+
+```typescript
+interface ElectronFileTransportConfig {
+  fileName?: string;             // Log filename (default: 'app.log')
+  maxFileSize?: number;          // Max size before rotation (default: 10MB)
+  maxFiles?: number;             // Number of rotated files (default: 5)
+  enableInternalLogging?: boolean; // Log transport operations (default: false)
+}
+```
+
+**Features:**
+- ✅ Uses Electron's `app.getPath('userData')` for log directory
+- ✅ Works in both main and renderer processes
+- ✅ Automatic file rotation
+- ✅ No external dependencies
+
+**Example Usage:**
+
+```typescript
+// Main Process
+import { app } from "electron";
+import { createModuleLogger, CommonLoggerConfig } from "@dqcai/logger";
+import { ElectronFileTransport } from "@dqcai/logger";
+
+app.on("ready", () => {
+  const electronTransport = new ElectronFileTransport({
+    fileName: "main.log",
+    maxFileSize: 5 * 1024 * 1024
+  });
+
+  CommonLoggerConfig.addTransport(electronTransport);
+
+  const logger = createModuleLogger("ElectronMain");
+  logger.info("Electron app ready", { version: app.getVersion() });
+});
+
+// Renderer Process
+import { createModuleLogger } from "@dqcai/logger";
+
+const logger = createModuleLogger("ElectronRenderer");
+logger.info("Window loaded", { url: window.location.href });
+```
+
+**Log Location:**
+- **Windows:** `%APPDATA%\YourApp\logs\app.log`
+- **macOS:** `~/Library/Application Support/YourApp/logs/app.log`
+- **Linux:** `~/.config/YourApp/logs/app.log`
+
+---
+
+### 5. DBTransport (Database Logging)
+
+Store logs in a database for advanced querying, analytics, and monitoring.
+
+```typescript
+import { DBTransport, CommonLoggerConfig } from "@dqcai/logger";
+
+const dbTransport = new DBTransport({
+  databaseType: "sqlite",      // 'sqlite' | 'postgresql' | 'mysql' | 'mongodb'
+  database: "logger",
+  dbDirectory: "./logs",       // For SQLite
+  batchSize: 50,               // Batch insert size
+  flushInterval: 5000,         // Auto-flush every 5s
+  enableStatistics: true,      // Track log statistics
+  enableErrorTable: true,      // Separate table for errors
+  enableInternalLogging: false
+});
+
+CommonLoggerConfig.addTransport(dbTransport);
+```
+
+**Configuration Options:**
+
+```typescript
+interface DBTransportConfig {
+  databaseType: 'sqlite' | 'postgresql' | 'mysql' | 'mongodb';
+  database: string;              // Database name
+  dbDirectory?: string;          // SQLite directory (default: './logs')
+  host?: string;                 // For remote databases
+  port?: number;                 // For remote databases
+  username?: string;             // For remote databases
+  password?: string;             // For remote databases
+  batchSize?: number;            // Batch insert size (default: 50)
+  flushInterval?: number;        // Auto-flush interval (default: 5000ms)
+  enableStatistics?: boolean;    // Track statistics (default: true)
+  enableErrorTable?: boolean;    // Separate error table (default: true)
+  enableInternalLogging?: boolean; // Log transport operations (default: false)
+}
+```
+
+**Features:**
+- ✅ Support for SQLite, PostgreSQL, MySQL, MongoDB
+- ✅ Automatic table creation and schema management
+- ✅ Batch inserts for performance
+- ✅ Session tracking
+- ✅ Built-in statistics
+- ✅ Query logs by level, module, session, date range
+- ✅ Automatic cleanup of old logs
+
+**Database Schema:**
+
+```sql
+-- logs table
+CREATE TABLE logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  timestamp TEXT NOT NULL,
+  level TEXT NOT NULL,
+  module TEXT NOT NULL,
+  message TEXT NOT NULL,
+  data TEXT,
+  session_id TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- errors table (if enableErrorTable: true)
+CREATE TABLE errors (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  timestamp TEXT NOT NULL,
+  module TEXT NOT NULL,
+  message TEXT NOT NULL,
+  error_data TEXT,
+  stack_trace TEXT,
+  session_id TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- statistics table (if enableStatistics: true)
+CREATE TABLE log_statistics (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date TEXT NOT NULL,
+  module TEXT NOT NULL,
+  level TEXT NOT NULL,
+  count INTEGER DEFAULT 0,
+  UNIQUE(date, module, level)
+);
+```
+
+**Example Usage:**
+
+```typescript
+import { createModuleLogger, CommonLoggerConfig } from "@dqcai/logger";
+import { DBTransport } from "@dqcai/logger";
+
+// Setup transport
+const dbTransport = new DBTransport({
+  databaseType: "sqlite",
+  database: "myapp",
+  dbDirectory: "./logs",
+  batchSize: 100,
+  enableStatistics: true,
+  enableErrorTable: true
+});
+
+CommonLoggerConfig.addTransport(dbTransport);
+
+// Start a session
+const sessionId = await dbTransport.startSession("user_session_001");
+
+// Use logger
+const logger = createModuleLogger("UserService");
+
+logger.info("User logged in", { 
+  userId: "user_123",
+  email: "user@example.com"
+});
+
+logger.error("Payment failed", {
+  orderId: "order_456",
+  amount: 99.99,
+  error: "Insufficient funds"
+});
+
+// Flush logs
+await CommonLoggerConfig.flush();
+
+// Query logs
+const errorLogs = await dbTransport.getLogsByLevel("error", 10);
+console.log("Recent errors:", errorLogs);
+
+const userLogs = await dbTransport.getLogsByModule("UserService", 20);
+console.log("User service logs:", userLogs);
+
+const sessionLogs = await dbTransport.getLogsBySession(sessionId);
+console.log("Session logs:", sessionLogs);
+
+// Get statistics
+const stats = await dbTransport.getStatistics();
+console.log("Daily statistics:", stats);
+
+// Advanced query
+const customLogs = await dbTransport.queryLogs(
+  {
+    level: "error",
+    module: "UserService",
+    startDate: "2025-01-01",
+    endDate: "2025-01-31"
+  },
+  { limit: 50, offset: 0 }
+);
+
+// Cleanup old logs (older than 90 days)
+const deletedCount = await dbTransport.clearOldLogs(90);
+console.log(`Deleted ${deletedCount} old logs`);
+
+// End session
+await dbTransport.endSession();
+
+// Get transport statistics
+const transportStats = await dbTransport.getTransportStats();
+console.log("Transport stats:", transportStats);
+/*
+{
+  totalLogs: 1523,
+  errorCount: 45,
+  bufferSize: 12,
+  levelCounts: {
+    trace: 234,
+    debug: 567,
+    info: 634,
+    warn: 43,
+    error: 45
   }
+}
+*/
+```
 
-  async connect(): Promise<void> {
-    await this.logInfo('Connecting to database...');
-    try {
-      // Connection logic here
-      await this.logDebug('Connected successfully');
-    } catch (error) {
-      await this.logError('Connection failed', { error });
-      throw error;
+**PostgreSQL Example:**
+
+```typescript
+const dbTransport = new DBTransport({
+  databaseType: "postgresql",
+  database: "myapp_logs",
+  host: "localhost",
+  port: 5432,
+  username: "logger",
+  password: "secure_password",
+  batchSize: 100,
+  enableStatistics: true
+});
+```
+
+**MongoDB Example:**
+
+```typescript
+const dbTransport = new DBTransport({
+  databaseType: "mongodb",
+  database: "myapp_logs",
+  host: "localhost",
+  port: 27017,
+  username: "logger",
+  password: "secure_password",
+  batchSize: 100
+});
+```
+
+---
+
+### 6. ApiTransport (Remote Logging)
+
+Send logs to a remote API endpoint with batching, retry, and error handling.
+
+```typescript
+import { ApiTransport, CommonLoggerConfig } from "@dqcai/logger";
+
+const apiTransport = new ApiTransport({
+  baseURL: "https://logs.example.com",
+  endpoint: "/api/logs",
+  apiKey: "your-api-key",
+  batchSize: 20,
+  batchTimeout: 5000,
+  maxRetries: 3,
+  retryDelay: 1000,
+  enableInternalLogging: false
+});
+
+CommonLoggerConfig.addTransport(apiTransport);
+```
+
+**Configuration Options:**
+
+```typescript
+interface ApiTransportConfig {
+  baseURL: string;               // API base URL
+  endpoint?: string;             // Log endpoint (default: '/logs')
+  apiKey?: string;               // API authentication key
+  headers?: Record<string, string>; // Custom headers
+  batchSize?: number;            // Batch size (default: 10)
+  batchTimeout?: number;         // Batch timeout (default: 5000ms)
+  maxRetries?: number;           // Retry attempts (default: 3)
+  retryDelay?: number;           // Retry delay (default: 1000ms)
+  enableInternalLogging?: boolean; // Log transport operations (default: false)
+}
+```
+
+**Features:**
+- ✅ Automatic batching for efficiency
+- ✅ Exponential backoff retry
+- ✅ Custom headers and authentication
+- ✅ Network error handling
+- ✅ Queue management
+- ✅ Uses `axios` (auto-loaded)
+
+**Example Usage:**
+
+```typescript
+import { createModuleLogger, CommonLoggerConfig } from "@dqcai/logger";
+import { ApiTransport } from "@dqcai/logger";
+
+// Setup transport
+const apiTransport = new ApiTransport({
+  baseURL: "https://api.loggingservice.com",
+  endpoint: "/v1/logs",
+  apiKey: "sk_live_abc123xyz",
+  headers: {
+    "X-App-Version": "1.0.0",
+    "X-Environment": "production"
+  },
+  batchSize: 50,
+  batchTimeout: 10000,
+  maxRetries: 5
+});
+
+CommonLoggerConfig.addTransport(apiTransport);
+
+// Use logger
+const logger = createModuleLogger("ApiService");
+
+logger.info("API request", {
+  method: "POST",
+  endpoint: "/users",
+  duration: "45ms"
+});
+
+logger.error("API timeout", {
+  endpoint: "/orders",
+  timeout: 5000,
+  retries: 3
+});
+
+// Manually flush if needed (automatic batching handles this normally)
+await apiTransport.flush();
+```
+
+**Expected API Request Format:**
+
+```json
+POST /api/logs
+Content-Type: application/json
+Authorization: Bearer your-api-key
+
+{
+  "logs": [
+    {
+      "timestamp": "2025-01-15T10:30:45.123Z",
+      "level": "info",
+      "module": "ApiService",
+      "message": "API request",
+      "data": {
+        "method": "POST",
+        "endpoint": "/users",
+        "duration": "45ms"
+      }
+    },
+    {
+      "timestamp": "2025-01-15T10:31:12.456Z",
+      "level": "error",
+      "module": "ApiService",
+      "message": "API timeout",
+      "data": {
+        "endpoint": "/orders",
+        "timeout": 5000,
+        "retries": 3
+      }
     }
+  ]
+}
+```
+
+---
+
+## 🔧 Creating Custom Transports
+
+You can create your own transport to send logs anywhere you need. Simply implement the `ILogTransport` interface.
+
+### Transport Interface
+
+```typescript
+interface ILogTransport {
+  readonly name: string;                    // Unique transport name
+  log(entry: LogEntry): Promise<void>;      // Handle a single log entry
+  flush?(): Promise<void>;                  // Optional: flush buffered logs
+  cleanup?(): Promise<void>;                // Optional: cleanup resources
+}
+
+interface LogEntry {
+  timestamp: string;
+  level: string;
+  module: string;
+  message: string;
+  data?: any;
+  metadata?: any;
+}
+```
+
+### Example: Slack Transport
+
+```typescript
+import { ILogTransport, LogEntry } from "@dqcai/logger";
+import axios from "axios";
+
+export class SlackTransport implements ILogTransport {
+  readonly name = "slack";
+  private webhookUrl: string;
+  private channel: string;
+  private minLevel: string;
+
+  constructor(config: {
+    webhookUrl: string;
+    channel?: string;
+    minLevel?: string;
+  }) {
+    this.webhookUrl = config.webhookUrl;
+    this.channel = config.channel || "#logs";
+    this.minLevel = config.minLevel || "error";
+  }
+
+  async log(entry: LogEntry): Promise<void> {
+    // Only send errors and above
+    if (!this.shouldLog(entry.level)) {
+      return;
+    }
+
+    const color = this.getLevelColor(entry.level);
+    const emoji = this.getLevelEmoji(entry.level);
+
+    try {
+      await axios.post(this.webhookUrl, {
+        channel: this.channel,
+        attachments: [
+          {
+            color: color,
+            title: `${emoji} ${entry.level.toUpperCase()}: ${entry.module}`,
+            text: entry.message,
+            fields: entry.data ? [
+              {
+                title: "Details",
+                value: "```" + JSON.stringify(entry.data, null, 2) + "```",
+                short: false
+              }
+            ] : [],
+            footer: "Logger",
+            ts: Date.now() / 1000
+          }
+        ]
+      });
+    } catch (error) {
+      console.error("[SlackTransport] Failed to send log:", error);
+    }
+  }
+
+  private shouldLog(level: string): boolean {
+    const levels = ["trace", "debug", "info", "warn", "error"];
+    const minIndex = levels.indexOf(this.minLevel);
+    const currentIndex = levels.indexOf(level);
+    return currentIndex >= minIndex;
+  }
+
+  private getLevelColor(level: string): string {
+    const colors: Record<string, string> = {
+      error: "danger",
+      warn: "warning",
+      info: "good",
+      debug: "#439FE0",
+      trace: "#CCCCCC"
+    };
+    return colors[level] || "good";
+  }
+
+  private getLevelEmoji(level: string): string {
+    const emojis: Record<string, string> = {
+      error: "🚨",
+      warn: "⚠️",
+      info: "ℹ️",
+      debug: "🐛",
+      trace: "🔍"
+    };
+    return emojis[level] || "📝";
   }
 }
 
 // Usage
-const dbManager = new DatabaseManager();
-await dbManager.connect();
+import { CommonLoggerConfig, createModuleLogger } from "@dqcai/logger";
+
+const slackTransport = new SlackTransport({
+  webhookUrl: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
+  channel: "#production-errors",
+  minLevel: "error"
+});
+
+CommonLoggerConfig.addTransport(slackTransport);
+
+const logger = createModuleLogger("CriticalService");
+logger.error("Payment processing failed", {
+  orderId: "12345",
+  amount: 99.99,
+  reason: "Card declined"
+});
 ```
+
+### Example: Sentry Transport
+
+```typescript
+import { ILogTransport, LogEntry } from "@dqcai/logger";
+import * as Sentry from "@sentry/node";
+
+export class SentryTransport implements ILogTransport {
+  readonly name = "sentry";
+
+  constructor(config: { dsn: string; environment?: string }) {
+    Sentry.init({
+      dsn: config.dsn,
+      environment: config.environment || "production"
+    });
+  }
+
+  async log(entry: LogEntry): Promise<void> {
+    if (entry.level === "error") {
+      Sentry.captureException(new Error(entry.message), {
+        level: "error",
+        tags: {
+          module: entry.module
+        },
+        extra: entry.data
+      });
+    } else if (entry.level === "warn") {
+      Sentry.captureMessage(entry.message, {
+        level: "warning",
+        tags: {
+          module: entry.module
+        },
+        extra: entry.data
+      });
+    }
+  }
+
+  async cleanup(): Promise<void> {
+    await Sentry.close(2000);
+  }
+}
+```
+
+### Example: Email Transport
+
+```typescript
+import { ILogTransport, LogEntry } from "@dqcai/logger";
+import nodemailer from "nodemailer";
+
+export class EmailTransport implements ILogTransport {
+  readonly name = "email";
+  private transporter: any;
+  private recipient: string;
+  private logBuffer: LogEntry[] = [];
+  private flushTimer: NodeJS.Timeout | null = null;
+
+  constructor(config: {
+    smtpHost: string;
+    smtpPort: number;
+    smtpUser: string;
+    smtpPass: string;
+    recipient: string;
+    batchSize?: number;
+    batchTimeout?: number;
+  }) {
+    this.transporter = nodemailer.createTransporter({
+      host: config.smtpHost,
+      port: config.smtpPort,
+      auth: {
+        user: config.smtpUser,
+        pass: config.smtpPass
+      }
+    });
+    this.recipient = config.recipient;
+  }
+
+  async log(entry: LogEntry): Promise<void> {
+    // Only email errors
+    if (entry.level !== "error") return;
+
+    this.logBuffer.push(entry);
+
+    if (this.logBuffer.length >= 5) {
+      await this.flush();
+    } else if (!this.flushTimer) {
+      this.flushTimer = setTimeout(() => this.flush(), 60000); // 1 minute
+    }
+  }
+
+  async flush(): Promise<void> {
+    if (this.logBuffer.length === 0) return;
+
+    const logs = [...this.logBuffer];
+    this.logBuffer = [];
+
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+
+    const html = this.formatLogsAsHTML(logs);
+
+    try {
+      await this.transporter.sendMail({
+        from: "logger@yourapp.com",
+        to: this.recipient,
+        subject: `[Logger] ${logs.length} Error(s) Detected`,
+        html: html
+      });
+    } catch (error) {
+      console.error("[EmailTransport] Failed to send email:", error);
+    }
+  }
+
+  private formatLogsAsHTML(logs: LogEntry[]): string {
+    return `
+      <h2>Error Log Report</h2>
+      <p>Generated: ${new Date().toISOString()}</p>
+      <table border="1" cellpadding="5">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Module</th>
+            <th>Message</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${logs.map(log => `
+            <tr>
+              <td>${log.timestamp}</td>
+              <td>${log.module}</td>
+              <td>${log.message}</td>
+              <td><pre>${JSON.stringify(log.data, null, 2)}</pre></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+}
+```
+
+### Best Practices for Custom Transports
+
+1. **Error Handling**: Always wrap transport operations in try-catch
+2. **Performance**: Use batching for network transports
+3. **Cleanup**: Implement cleanup() to release resources
+4. **Async Operations**: Make log() async for I/O operations
+5. **Buffering**: Buffer logs and flush periodically for efficiency
+6. **Retry Logic**: Implement retry for unreliable destinations
+7. **Configuration**: Make transports configurable
+8. **Testing**: Test with CommonLoggerConfig.flush()
 
 ---
 
 ## ⚙️ Advanced Configuration
 
-### Configuration Builder
+### Multi-Transport Setup
 
 ```typescript
-import { LoggerConfigBuilder, createLogger } from '@dqcai/logger';
+import {
+  LoggerConfigBuilder,
+  CommonLoggerConfig,
+  NodeFileTransport,
+  DBTransport,
+  ApiTransport
+} from "@dqcai/logger";
 
-const config = new LoggerConfigBuilder()
-  .setEnabled(true)
-  .setDefaultLevel('info')
-  .addModule('App', true, ['info', 'warn', 'error'], ['console'])
-  .addModule('DatabaseManager', true, ['debug', 'info'], ['console', 'file'])
-  .addModule('AuthService', true, ['error'], ['console', 'api'])
-  .build();
-
-const logger = createLogger(config);
-```
-
-### Runtime Configuration Updates
-
-```typescript
-// Update module configuration at runtime
-logger.setModuleConfig('DatabaseManager', {
-  enabled: false,
-  levels: [],
-  transports: []
+// Create transports
+const fileTransport = new NodeFileTransport({
+  filePath: "./logs/app.log",
+  maxFileSize: 10 * 1024 * 1024
 });
 
-// Enable/disable entire logger
-logger.setEnabled(false);
-```
+const dbTransport = new DBTransport({
+  databaseType: "sqlite",
+  database: "logs",
+  enableStatistics: true
+});
 
-### Development vs Production Configuration
+const apiTransport = new ApiTransport({
+  baseURL: "https://logs.example.com",
+  apiKey: "your-api-key",
+  batchSize: 50
+});
 
-```typescript
-import { LoggerUtils } from '@dqcai/logger';
+// Add all transports
+CommonLoggerConfig.addTransport(fileTransport);
+CommonLoggerConfig.addTransport(dbTransport);
+CommonLoggerConfig.addTransport(apiTransport);
 
-// Development configuration
-const devLogger = createLogger(LoggerUtils.createDevelopmentConfig());
-
-// Production configuration
-const prodConfig = new LoggerConfigBuilder()
+// Configure modules with different transport combinations
+const config = new LoggerConfigBuilder()
   .setEnabled(true)
-  .setDefaultLevel('warn')
-  .addModule('critical', true, ['error'], ['console', 'api'])
+  .setDefaultLevel("info")
+  .addModule("CriticalService", true, 
+    ["error"], 
+    ["console", "node-file", "db", "api"]  // All transports
+  )
+  .addModule("BackgroundJob", true,
+    ["info", "warn", "error"],
+    ["node-file", "db"]  // File and DB only
+  )
+  .addModule("WebServer", true,
+    ["debug", "info", "warn", "error"],
+    ["console", "node-file"]  // Console and file
+  )
   .build();
 
-const prodLogger = createLogger(prodConfig);
+CommonLoggerConfig.updateConfiguration(config);
+```
+
+### Environment-Based Configuration
+
+```typescript
+class LoggerFactory {
+  static createLogger() {
+    const env = process.env.NODE_ENV || "development";
+    
+    // Clear existing transports
+    CommonLoggerConfig.setTransports([]);
+    
+    switch (env) {
+      case "development":
+        CommonLoggerConfig.addTransport(new ConsoleTransport());
+        return this.createDevConfig();
+      
+      case "production":
+        CommonLoggerConfig.addTransport(new DBTransport({
+          databaseType: "postgresql",
+          host: process.env.DB_HOST,
+          database: "logs"
+        }));
+        CommonLoggerConfig.addTransport(new ApiTransport({
+          baseURL: process.env.LOG_API_URL,
+          apiKey: process.env.LOG_API_KEY
+        }));
+        return this.createProdConfig();
+      
+      case "test":
+        // No transports for testing
+        return this.createTestConfig();
+    }
+  }
+  
+  private static createDevConfig() {
+    return new LoggerConfigBuilder()
+      .setEnabled(true)
+      .setDefaultLevel("debug")
+      .addModule("App", true, ["debug", "info", "warn", "error"], ["console"])
+      .build();
+  }
+  
+  private static createProdConfig() {
+    return new LoggerConfigBuilder()
+      .setEnabled(true)
+      .setDefaultLevel("info")
+      .addModule("critical", true, ["error"], ["db", "api"])
+      .addModule("normal", true, ["warn", "error"], ["db"])
+      .build();
+  }
+  
+  private static createTestConfig() {
+    return new LoggerConfigBuilder()
+      .setEnabled(false)
+      .build();
+  }
+}
+
+// Apply configuration
+const config = LoggerFactory.createLogger();
+CommonLoggerConfig.updateConfiguration(config);
 ```
 
 ---
 
-## 🎨 Logger Decorators - Advanced Patterns
-
-Logger Decorators help you automatically log function/method activities without writing manual logging code. This provides a clean and maintainable solution for monitoring performance, debugging issues, and tracking application flow.
-
-### 1. LogMethod Decorator - Basic Method Logging
-
-#### For Standalone Functions
-
-```typescript
-import { createLogger, LoggerUtils } from '@dqcai/logger';
-
-const logger = createLogger(LoggerUtils.createDevelopmentConfig());
-const dataLogger = logger.createModuleLogger('DataProcessor');
-
-// Original function
-async function importData(filePath: string, options: any = {}): Promise<any> {
-  // Simulate processing
-  await new Promise(resolve => setTimeout(resolve, 100));
-  return { imported: 150, errors: 0 };
-}
-
-// Apply LogMethod decorator
-const importDataWithLogging = applyLogMethod(importData, dataLogger, 'importData');
-
-// Helper function to apply LogMethod
-function applyLogMethod<T extends (...args: any[]) => any>(
-  originalFunction: T,
-  logger: any,
-  methodName: string
-): T {
-  return (async function(...args: any[]) {
-    if (!logger) return await originalFunction.apply(this, args);
-
-    try {
-      await logger.debug(`🚀 Calling ${methodName}`, {
-        args: args.length,
-        argTypes: args.map(arg => typeof arg)
-      });
-
-      const start = Date.now();
-      try {
-        const result = await originalFunction.apply(this, args);
-        const duration = Date.now() - start;
-        await logger.debug(`✅ ${methodName} completed in ${duration}ms`);
-        return result;
-      } catch (error) {
-        const duration = Date.now() - start;
-        await logger.error(`❌ ${methodName} failed after ${duration}ms`, {
-          error: error.message,
-          stack: error.stack
-        });
-        throw error;
-      }
-    } catch (logError) {
-      console.warn(`[LogMethod] Logging failed for ${methodName}:`, logError);
-      return await originalFunction.apply(this, args);
-    }
-  }) as T;
-}
-
-// Usage
-async function testImportData(): Promise<void> {
-  const result = await importDataWithLogging('/data/users.csv', { skipHeaders: true });
-  console.log('Import result:', result);
-}
-```
-
-#### For Class Methods
-
-```typescript
-class DataProcessor extends BaseModule {
-  constructor(logger: any) {
-    super('DataProcessor', logger);
-    
-    // Apply decorators to methods
-    this.importData = this.applyLogMethod(this.importData.bind(this));
-    this.processRecords = this.applyLogMethod(this.processRecords.bind(this));
-  }
-
-  async importData(filePath: string, options: any = {}): Promise<any> {
-    await new Promise(resolve => setTimeout(resolve, 100));
-    return { imported: 150, errors: 0 };
-  }
-
-  async processRecords(records: any[]): Promise<any[]> {
-    await new Promise(resolve => setTimeout(resolve, 50));
-    return records.map(r => ({ ...r, processed: true }));
-  }
-
-  private applyLogMethod<T extends (...args: any[]) => any>(method: T): T {
-    const self = this;
-    const methodName = method.name;
-    
-    return (async function(...args: any[]) {
-      if (!self.logger) return await method.apply(self, args);
-
-      try {
-        await self.logDebug(`🚀 Calling ${methodName}`, {
-          args: args.length,
-          argTypes: args.map(arg => typeof arg)
-        });
-
-        const start = Date.now();
-        try {
-          const result = await method.apply(self, args);
-          const duration = Date.now() - start;
-          await self.logDebug(`✅ ${methodName} completed in ${duration}ms`);
-          return result;
-        } catch (error) {
-          const duration = Date.now() - start;
-          await self.logError(`❌ ${methodName} failed after ${duration}ms`, {
-            error: error.message
-          });
-          throw error;
-        }
-      } catch (logError) {
-        console.warn(`[LogMethod] Logging failed for ${methodName}:`, logError);
-        return await method.apply(self, args);
-      }
-    }) as T;
-  }
-}
-
-// Usage
-const processor = new DataProcessor(logger);
-await processor.importData('/data/products.csv');
-```
-
-### 2. LogPerformance Decorator - Performance Monitoring
-
-```typescript
-class DatabaseService extends BaseModule {
-  constructor(logger: any) {
-    super('DatabaseService', logger);
-    
-    // Apply performance monitoring
-    this.heavyQuery = this.applyLogPerformance(this.heavyQuery.bind(this), 2000);
-    this.bulkInsert = this.applyLogPerformance(this.bulkInsert.bind(this), 5000);
-  }
-
-  async heavyQuery(sql: string): Promise<any> {
-    // Simulate slow query
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    return { rows: 1000, time: '3000ms' };
-  }
-
-  async bulkInsert(records: any[]): Promise<any> {
-    // Simulate bulk operation
-    await new Promise(resolve => setTimeout(resolve, 6000));
-    return { inserted: records.length };
-  }
-
-  private applyLogPerformance<T extends (...args: any[]) => any>(
-    method: T, 
-    threshold: number = 1000
-  ): T {
-    const self = this;
-    const methodName = method.name;
-    
-    return (async function(...args: any[]) {
-      const start = Date.now();
-
-      try {
-        const result = await method.apply(self, args);
-        const duration = Date.now() - start;
-
-        if (self.logger && duration > threshold) {
-          await self.logWarn(`🐌 Slow method: ${methodName} took ${duration}ms`, {
-            threshold,
-            duration,
-            methodName,
-            className: self.constructor.name
-          });
-        }
-
-        return result;
-      } catch (error) {
-        const duration = Date.now() - start;
-        if (self.logger) {
-          await self.logError(`❌ ${methodName} failed after ${duration}ms`, {
-            threshold,
-            duration,
-            error: error.message
-          });
-        }
-        throw error;
-      }
-    }) as T;
-  }
-}
-
-// Usage
-const dbService = new DatabaseService(logger);
-await dbService.heavyQuery('SELECT * FROM large_table');
-```
-
-### 3. LogCache Decorator - Caching with Logging
-
-```typescript
-// For standalone functions
-async function calculateExpensiveResult(input: string): Promise<string> {
-  // Simulate heavy calculation
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return `Expensive result for: ${input}`;
-}
-
-// Apply caching (TTL: 5 seconds)
-const calculateExpensiveResultCached = applyLogCache(
-  calculateExpensiveResult,
-  dataLogger,
-  'calculateExpensiveResult',
-  5000
-);
-
-function applyLogCache<T extends (...args: any[]) => any>(
-  originalFunction: T,
-  logger: any,
-  methodName: string,
-  ttlMs: number = 60000
-): T {
-  const cache = new Map<string, { value: any; expires: number }>();
-  
-  return (async function(...args: any[]) {
-    const cacheKey = `${methodName}.${JSON.stringify(args)}`;
-    const now = Date.now();
-    const cached = cache.get(cacheKey);
-
-    // Check cache hit
-    if (cached && cached.expires > now) {
-      if (logger) {
-        await logger.debug(`💾 Cache HIT for ${methodName}`, { cacheKey });
-      }
-      return cached.value;
-    }
-
-    // Cache miss - execute function
-    if (logger) {
-      await logger.debug(`🔍 Cache MISS for ${methodName}`, { cacheKey });
-    }
-
-    const result = await originalFunction.apply(this, args);
-
-    // Store in cache
-    cache.set(cacheKey, {
-      value: result,
-      expires: now + ttlMs
-    });
-
-    return result;
-  }) as T;
-}
-
-// Test caching
-console.log('First call (cache miss):');
-await calculateExpensiveResultCached('test-data');
-
-console.log('Second call (cache hit):');
-await calculateExpensiveResultCached('test-data');
-```
-
-### 4. LogRetry Decorator - Retry with Exponential Backoff
-
-```typescript
-// Unstable function for testing
-let attemptCount = 0;
-async function unstableApiCall(endpoint: string): Promise<any> {
-  attemptCount++;
-  
-  // Fail first 2 times, succeed on 3rd
-  if (attemptCount < 3) {
-    throw new Error(`API error #${attemptCount}: Network timeout`);
-  }
-  
-  attemptCount = 0; // Reset for next test
-  return { status: 'success', data: `Data from ${endpoint}` };
-}
-
-// Apply retry (max 3 retries, base delay 500ms)
-const unstableApiCallWithRetry = applyLogRetry(
-  unstableApiCall,
-  dataLogger,
-  'unstableApiCall',
-  3,
-  500
-);
-
-function applyLogRetry<T extends (...args: any[]) => any>(
-  originalFunction: T,
-  logger: any,
-  methodName: string,
-  maxRetries: number = 3,
-  baseDelayMs: number = 1000
-): T {
-  return (async function(...args: any[]) {
-    let lastError: Error;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        if (logger && attempt > 1) {
-          await logger.info(`🔄 Retry attempt ${attempt}/${maxRetries} for ${methodName}`);
-        }
-
-        return await originalFunction.apply(this, args);
-      } catch (error) {
-        lastError = error;
-
-        if (logger) {
-          await logger.warn(`⚠️ Attempt ${attempt}/${maxRetries} failed for ${methodName}`, {
-            attempt,
-            maxRetries,
-            error: error.message,
-            willRetry: attempt < maxRetries
-          });
-        }
-
-        // Exponential backoff delay
-        if (attempt < maxRetries) {
-          const delay = baseDelayMs * Math.pow(2, attempt - 1);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
-    }
-
-    // All retries exhausted
-    if (logger) {
-      await logger.error(`💥 All ${maxRetries} attempts failed for ${methodName}`, {
-        maxRetries,
-        finalError: lastError.message
-      });
-    }
-
-    throw lastError;
-  }) as T;
-}
-
-// Test retry
-try {
-  const result = await unstableApiCallWithRetry('/api/users');
-  console.log('Success:', result);
-} catch (error) {
-  console.log('Final failure:', error.message);
-}
-```
-
-### 5. Combined Decorators with BaseModule
-
-```typescript
-class FileProcessor extends BaseModule {
-  constructor(logger: any) {
-    super('FileProcessor', logger);
-    
-    // Apply multiple decorators
-    this.importData = this.applyMultipleDecorators(
-      this.importData.bind(this),
-      ['method', 'performance:2000', 'cache:10000']
-    );
-  }
-
-  async importData(filePath: string): Promise<any> {
-    await this.logInfo('Starting data import', { filePath });
-    
-    // Simulate processing
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const result = { imported: 100, errors: 2 };
-    await this.logInfo('Import completed', result);
-    
-    return result;
-  }
-
-  private applyMultipleDecorators<T extends (...args: any[]) => any>(
-    method: T, 
-    decorators: string[]
-  ): T {
-    let decoratedMethod = method;
-    
-    for (const decorator of decorators) {
-      if (decorator === 'method') {
-        decoratedMethod = this.applyMethodLogging(decoratedMethod);
-      } else if (decorator.startsWith('performance:')) {
-        const threshold = parseInt(decorator.split(':')[1]);
-        decoratedMethod = this.applyPerformanceLogging(decoratedMethod, threshold);
-      } else if (decorator.startsWith('cache:')) {
-        const ttl = parseInt(decorator.split(':')[1]);
-        decoratedMethod = this.applyCaching(decoratedMethod, ttl);
-      }
-    }
-    
-    return decoratedMethod;
-  }
-
-  private applyMethodLogging<T extends (...args: any[]) => any>(method: T): T {
-    const self = this;
-    return (async function(...args: any[]) {
-      await self.logDebug(`🚀 Calling ${method.name}`, { args: args.length });
-      
-      const start = Date.now();
-      try {
-        const result = await method.apply(self, args);
-        const duration = Date.now() - start;
-        await self.logDebug(`✅ ${method.name} completed in ${duration}ms`);
-        return result;
-      } catch (error) {
-        const duration = Date.now() - start;
-        await self.logError(`❌ ${method.name} failed after ${duration}ms`, { error: error.message });
-        throw error;
-      }
-    }) as T;
-  }
-
-  private applyPerformanceLogging<T extends (...args: any[]) => any>(method: T, threshold: number): T {
-    const self = this;
-    return (async function(...args: any[]) {
-      const start = Date.now();
-      const result = await method.apply(self, args);
-      const duration = Date.now() - start;
-      
-      if (duration > threshold) {
-        await self.logWarn(`🐌 Slow method: ${method.name} took ${duration}ms`, { threshold, duration });
-      }
-      
-      return result;
-    }) as T;
-  }
-
-  private applyCaching<T extends (...args: any[]) => any>(method: T, ttlMs: number): T {
-    const cache = new Map<string, { value: any; expires: number }>();
-    const self = this;
-    
-    return (async function(...args: any[]) {
-      const cacheKey = `${method.name}.${JSON.stringify(args)}`;
-      const cached = cache.get(cacheKey);
-      
-      if (cached && cached.expires > Date.now()) {
-        await self.logDebug(`💾 Cache HIT for ${method.name}`);
-        return cached.value;
-      }
-      
-      await self.logDebug(`🔍 Cache MISS for ${method.name}`);
-      const result = await method.apply(self, args);
-      
-      cache.set(cacheKey, {
-        value: result,
-        expires: Date.now() + ttlMs
-      });
-      
-      return result;
-    }) as T;
-  }
-}
-
-// Usage
-const processor = new FileProcessor(logger);
-await processor.importData('/data/large-file.csv');
-```
-
----
-
-## 🌍 Platform-Specific Examples
-
-### React Native
-
-```typescript
-import RNFS from 'react-native-fs';
-import { createLogger, ConsoleTransport, ILogTransport, LogEntry } from '@dqcai/logger';
-
-class RNFileTransport implements ILogTransport {
-  readonly name = 'file';
-  
-  constructor(private fileName: string = 'app.log') {}
-  
-  async log(entry: LogEntry): Promise<void> {
-    try {
-      const line = JSON.stringify(entry) + '\n';
-      const path = `${RNFS.DocumentDirectoryPath}/${this.fileName}`;
-      await RNFS.appendFile(path, line, 'utf8');
-    } catch (err) {
-      console.error('[RNFileTransport] write error', err);
-    }
-  }
-}
-
-const logger = createLogger();
-logger.addTransport(new ConsoleTransport());
-logger.addTransport(new RNFileTransport('app.log'));
-
-logger.info('App', 'React Native app started');
-```
-
-### Web Browser
-
-```typescript
-import { createLogger, ConsoleTransport, ILogTransport, LogEntry } from '@dqcai/logger';
-
-class WebFileTransport implements ILogTransport {
-  readonly name = 'file';
-  private readonly storageKey = 'app_logs';
-  
-  async log(entry: LogEntry): Promise<void> {
-    try {
-      const existingLogs = JSON.parse(localStorage.getItem(this.storageKey) || '[]');
-      existingLogs.push(entry);
-      
-      // Keep only last 1000 logs to prevent storage overflow
-      if (existingLogs.length > 1000) {
-        existingLogs.splice(0, existingLogs.length - 1000);
-      }
-      
-      localStorage.setItem(this.storageKey, JSON.stringify(existingLogs));
-    } catch (e) {
-      console.error('[WebFileTransport] persist error', e);
-    }
-  }
-  
-  getLogs(): LogEntry[] {
-    try {
-      return JSON.parse(localStorage.getItem(this.storageKey) || '[]');
-    } catch {
-      return [];
-    }
-  }
-  
-  clearLogs(): void {
-    localStorage.removeItem(this.storageKey);
-  }
-}
-
-const logger = createLogger();
-logger.addTransport(new ConsoleTransport());
-logger.addTransport(new WebFileTransport());
-
-logger.info('WebApp', 'Web application started');
-```
-
-### Node.js
-
-```typescript
-import fs from 'fs/promises';
-import path from 'path';
-import { createLogger, ConsoleTransport, ILogTransport, LogEntry } from '@dqcai/logger';
-
-class NodeFileTransport implements ILogTransport {
-  readonly name = 'file';
-  
-  constructor(private filePath: string = './app.log') {
-    // Ensure directory exists
-    this.ensureDirectoryExists();
-  }
-  
-  private async ensureDirectoryExists(): Promise<void> {
-    try {
-      const dir = path.dirname(this.filePath);
-      await fs.mkdir(dir, { recursive: true });
-    } catch (error) {
-      console.error('[NodeFileTransport] Failed to create directory:', error);
-    }
-  }
-  
-  async log(entry: LogEntry): Promise<void> {
-    try {
-      const logLine = JSON.stringify({
-        ...entry,
-        timestamp: new Date().toISOString()
-      }) + '\n';
-      
-      await fs.appendFile(this.filePath, logLine);
-    } catch (e) {
-      console.error('[NodeFileTransport] write error', e);
-    }
-  }
-  
-  async rotateLogs(maxSizeBytes: number = 10 * 1024 * 1024): Promise<void> {
-    try {
-      const stats = await fs.stat(this.filePath);
-      if (stats.size > maxSizeBytes) {
-        const backupPath = `${this.filePath}.${Date.now()}.backup`;
-        await fs.rename(this.filePath, backupPath);
-      }
-    } catch (error) {
-      console.error('[NodeFileTransport] Log rotation failed:', error);
-    }
-  }
-}
-
-const logger = createLogger();
-logger.addTransport(new ConsoleTransport());
-logger.addTransport(new NodeFileTransport('./logs/server.log'));
-
-logger.info('Server', 'Node.js server started on port 3000');
-```
-
----
-
-## 🚛 Built-in and Custom Transports
-
-### API Transport
-
-```typescript
-import axios, { AxiosInstance } from 'axios';
-import { ILogTransport, LogEntry } from '@dqcai/logger';
-
-class ApiTransport implements ILogTransport {
-  readonly name = 'api';
-  private client: AxiosInstance;
-  private endpoint: string;
-  private batchSize: number;
-  private batchTimeout: number;
-  private logQueue: LogEntry[] = [];
-  private timer: NodeJS.Timeout | null = null;
-
-  constructor(
-    baseURL: string,
-    endpoint: string = '/logs',
-    batchSize: number = 10,
-    batchTimeout: number = 5000
-  ) {
-    this.client = axios.create({
-      baseURL,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    this.endpoint = endpoint;
-    this.batchSize = batchSize;
-    this.batchTimeout = batchTimeout;
-  }
-
-  async log(entry: LogEntry): Promise<void> {
-    this.logQueue.push(entry);
-    
-    if (this.logQueue.length >= this.batchSize) {
-      await this.flush();
-    } else if (!this.timer) {
-      this.timer = setTimeout(() => this.flush(), this.batchTimeout);
-    }
-  }
-
-  private async flush(): Promise<void> {
-    if (this.logQueue.length === 0) return;
-    
-    const logsToSend = [...this.logQueue];
-    this.logQueue = [];
-    
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
-    }
-
-    try {
-      await this.client.post(this.endpoint, { logs: logsToSend });
-    } catch (err) {
-      console.error('[ApiTransport] Failed to send logs:', err);
-      // Optionally re-queue failed logs
-    }
-  }
-}
-
-// Usage
-const apiTransport = new ApiTransport('https://api.example.com', '/api/logs', 5, 3000);
-logger.addTransport(apiTransport);
-```
-
-### Database Transport
-
-```typescript
-class DatabaseTransport implements ILogTransport {
-  readonly name = 'database';
-  private connectionString: string;
-  
-  constructor(connectionString: string) {
-    this.connectionString = connectionString;
-  }
-  
-  async log(entry: LogEntry): Promise<void> {
-    try {
-      // Pseudo-code for database insertion
-      // Replace with your actual database client
-      /*
-      await db.query(`
-        INSERT INTO logs (timestamp, level, module, message, metadata)
-        VALUES (?, ?, ?, ?, ?)
-      `, [
-        entry.timestamp,
-        entry.level,
-        entry.module,
-        entry.message,
-        JSON.stringify(entry.metadata)
-      ]);
-      */
-    } catch (error) {
-      console.error('[DatabaseTransport] Failed to save log:', error);
-    }
-  }
-}
-```
+## 🎨 Logger Decorators
+
+Logger Decorators remain unchanged from v2.1.0. See the decorator examples in the original documentation for:
+
+- LogMethod Decorator
+- LogPerformance Decorator
+- LogCache Decorator
+- LogRetry Decorator
+- Combined Decorators
 
 ---
 
 ## 📊 Best Practices
 
-### 1. Environment-based Configuration
+### 1. Transport Selection by Environment
 
 ```typescript
-class LoggerFactory {
-  static createLogger(): any {
-    const env = process.env.NODE_ENV || 'development';
-    
-    switch (env) {
-      case 'development':
-        return createLogger(new LoggerConfigBuilder()
-          .setEnabled(true)
-          .setDefaultLevel('debug')
-          .addModule('App', true, ['debug', 'info', 'warn', 'error'], ['console'])
-          .build());
-      
-      case 'production':
-        return createLogger(new LoggerConfigBuilder()
-          .setEnabled(true)
-          .setDefaultLevel('warn')
-          .addModule('critical', true, ['error'], ['console', 'api'])
-          .addModule('performance', true, ['warn', 'error'], ['api'])
-          .build());
-      
-      case 'test':
-        return createLogger(new LoggerConfigBuilder()
-          .setEnabled(false)
-          .build());
-      
-      default:
-        return createLogger(LoggerUtils.createDevelopmentConfig());
-    }
-  }
+// Development: Console only for fast feedback
+if (process.env.NODE_ENV === "development") {
+  CommonLoggerConfig.addTransport(new ConsoleTransport());
 }
 
-const logger = LoggerFactory.createLogger();
-```
-
-### 2. Structured Logging
-
-```typescript
-interface UserLoginEvent {
-  userId: string;
-  email: string;
-  timestamp: string;
-  userAgent?: string;
-  ip?: string;
-  sessionId?: string;
+// Staging: File + DB for testing
+if (process.env.NODE_ENV === "staging") {
+  CommonLoggerConfig.addTransport(new NodeFileTransport({
+    filePath: "./logs/staging.log"
+  }));
+  CommonLoggerConfig.addTransport(new DBTransport({
+    databaseType: "sqlite",
+    database: "staging_logs"
+  }));
 }
 
-class UserService extends BaseModule {
-  async login(credentials: any, context: any): Promise<void> {
-    const loginEvent: UserLoginEvent = {
-      userId: credentials.userId,
-      email: credentials.email,
-      timestamp: new Date().toISOString(),
-      userAgent: context.userAgent,
-      ip: context.ip,
-      sessionId: context.sessionId
-    };
-
-    // Good: Structured data
-    await this.logInfo('User login attempt', loginEvent);
-    
-    try {
-      // Login logic here
-      await this.logInfo('User login successful', {
-        ...loginEvent,
-        success: true,
-        loginDuration: Date.now() - context.startTime
-      });
-    } catch (error) {
-      await this.logError('User login failed', {
-        ...loginEvent,
-        success: false,
-        error: error.message,
-        stack: error.stack
-      });
-      throw error;
-    }
-  }
+// Production: DB + API for monitoring
+if (process.env.NODE_ENV === "production") {
+  CommonLoggerConfig.addTransport(new DBTransport({
+    databaseType: "postgresql",
+    host: process.env.DB_HOST,
+    database: "production_logs"
+  }));
+  CommonLoggerConfig.addTransport(new ApiTransport({
+    baseURL: process.env.MONITORING_URL,
+    apiKey: process.env.MONITORING_API_KEY
+  }));
 }
 ```
 
-### 3. Performance Monitoring
+### 2. Graceful Shutdown
 
 ```typescript
-class PerformanceMonitor extends BaseModule {
-  private performanceThresholds = {
-    database: 1000,
-    api: 3000,
-    file: 5000,
-    calculation: 500
-  };
-
-  async measureOperation<T>(
-    operationType: keyof typeof this.performanceThresholds,
-    operation: string,
-    fn: () => Promise<T>
-  ): Promise<T> {
-    const start = Date.now();
-    const threshold = this.performanceThresholds[operationType];
-    
-    await this.logDebug(`Starting ${operationType} operation: ${operation}`);
-    
-    try {
-      const result = await fn();
-      const duration = Date.now() - start;
-      
-      if (duration > threshold) {
-        await this.logWarn(`Slow ${operationType} operation detected`, {
-          operation,
-          duration: `${duration}ms`,
-          threshold: `${threshold}ms`,
-          operationType
-        });
-      } else {
-        await this.logDebug(`${operationType} operation completed`, {
-          operation,
-          duration: `${duration}ms`
-        });
-      }
-      
-      return result;
-    } catch (error) {
-      const duration = Date.now() - start;
-      
-      await this.logError(`${operationType} operation failed`, {
-        operation,
-        duration: `${duration}ms`,
-        error: error.message,
-        operationType
-      });
-      
-      throw error;
-    }
-  }
-}
-
-// Usage
-const monitor = new PerformanceMonitor(logger);
-
-await monitor.measureOperation('database', 'getUserById', async () => {
-  return await db.findUserById('123');
-});
-
-await monitor.measureOperation('api', 'fetchExternalData', async () => {
-  return await fetch('/api/external/data');
+process.on("SIGTERM", async () => {
+  console.log("Shutting down gracefully...");
+  
+  // Flush all pending logs
+  await CommonLoggerConfig.flush();
+  
+  // Cleanup transports
+  await CommonLoggerConfig.cleanup();
+  
+  process.exit(0);
 });
 ```
 
-### 4. Error Context and Recovery
+### 3. Session Tracking
 
 ```typescript
-class ErrorHandler extends BaseModule {
-  async safeExecute<T>(
-    operation: string,
-    fn: () => Promise<T>,
-    fallback?: () => Promise<T>
-  ): Promise<T | null> {
-    try {
-      await this.logDebug(`Starting safe execution: ${operation}`);
-      const result = await fn();
-      await this.logDebug(`Safe execution completed: ${operation}`, { success: true });
-      return result;
-    } catch (error) {
-      await this.logError(`Safe execution failed: ${operation}`, {
-        error: error.message,
-        stack: error.stack,
-        operation,
-        hasFallback: !!fallback
-      });
-
-      if (fallback) {
-        try {
-          await this.logInfo(`Attempting fallback for: ${operation}`);
-          const result = await fallback();
-          await this.logInfo(`Fallback successful for: ${operation}`);
-          return result;
-        } catch (fallbackError) {
-          await this.logError(`Fallback failed for: ${operation}`, {
-            fallbackError: fallbackError.message,
-            originalError: error.message
-          });
-        }
-      }
-
-      return null;
-    }
+// Express middleware
+app.use(async (req, res, next) => {
+  const sessionId = req.sessionID || generateSessionId();
+  
+  // Start session in DB transport
+  const dbTransport = CommonLoggerConfig.getTransport("db");
+  if (dbTransport) {
+    await dbTransport.startSession(sessionId);
   }
-}
+  
+  // Attach logger to request
+  req.logger = createModuleLogger("WebServer");
+  req.logger.info("Request received", {
+    method: req.method,
+    url: req.url,
+    ip: req.ip
+  });
+  
+  res.on("finish", async () => {
+    req.logger.info("Request completed", {
+      statusCode: res.statusCode,
+      duration: Date.now() - req.startTime
+    });
+    
+    // End session
+    if (dbTransport) {
+      await dbTransport.endSession();
+    }
+  });
+  
+  next();
+});
 ```
 
-### 5. Real-world API Service Example
+### 4. Log Retention Strategy
 
 ```typescript
-interface ApiResponse<T> {
-  data: T;
-  status: number;
-  headers: Record<string, string>;
-}
+// Cleanup job (run daily)
+import { DBTransport } from "@dqcai/logger";
 
-class ApiService extends BaseModule {
-  private httpClient: any;
-  private baseURL: string;
-  private retryConfig = {
-    maxRetries: 3,
-    baseDelay: 1000,
-    backoffFactor: 2
-  };
+const dbTransport = CommonLoggerConfig.getTransport("db") as DBTransport;
 
-  constructor(logger: any, httpClient: any, baseURL: string) {
-    super('ApiService', logger);
-    this.httpClient = httpClient;
-    this.baseURL = baseURL;
-    
-    // Apply decorators to all API methods
-    this.get = this.applyApiDecorators(this.get.bind(this));
-    this.post = this.applyApiDecorators(this.post.bind(this));
-    this.put = this.applyApiDecorators(this.put.bind(this));
-    this.delete = this.applyApiDecorators(this.delete.bind(this));
-  }
+// Delete logs older than 90 days
+const deletedCount = await dbTransport.clearOldLogs(90);
+console.log(`Cleaned up ${deletedCount} old logs`);
 
-  async get<T>(endpoint: string, params?: any): Promise<ApiResponse<T>> {
-    await this.logDebug('GET request initiated', { endpoint, params });
-    
-    const response = await this.httpClient.get(`${this.baseURL}${endpoint}`, { params });
-    
-    await this.logInfo('GET request successful', {
-      endpoint,
-      status: response.status,
-      responseSize: JSON.stringify(response.data).length
-    });
-    
-    return response;
-  }
+// Rotate files daily
+import { NodeFileTransport } from "@dqcai/logger";
 
-  async post<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
-    await this.logDebug('POST request initiated', { 
-      endpoint, 
-      dataSize: JSON.stringify(data).length 
-    });
-    
-    const response = await this.httpClient.post(`${this.baseURL}${endpoint}`, data);
-    
-    await this.logInfo('POST request successful', {
-      endpoint,
-      status: response.status,
-      dataSize: JSON.stringify(data).length
-    });
-    
-    return response;
-  }
-
-  async put<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
-    await this.logDebug('PUT request initiated', { endpoint });
-    
-    const response = await this.httpClient.put(`${this.baseURL}${endpoint}`, data);
-    
-    await this.logInfo('PUT request successful', {
-      endpoint,
-      status: response.status
-    });
-    
-    return response;
-  }
-
-  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    await this.logDebug('DELETE request initiated', { endpoint });
-    
-    const response = await this.httpClient.delete(`${this.baseURL}${endpoint}`);
-    
-    await this.logInfo('DELETE request successful', {
-      endpoint,
-      status: response.status
-    });
-    
-    return response;
-  }
-
-  private applyApiDecorators<T extends (...args: any[]) => any>(method: T): T {
-    // 1. Method logging
-    let decorated = this.applyMethodLogging(method);
-    
-    // 2. Performance monitoring (warn if > 3 seconds)
-    decorated = this.applyPerformanceLogging(decorated, 3000);
-    
-    // 3. Retry mechanism for network issues
-    decorated = this.applyRetryLogging(decorated);
-    
-    // 4. Rate limiting awareness
-    decorated = this.applyRateLimitLogging(decorated);
-    
-    return decorated;
-  }
-
-  private applyRateLimitLogging<T extends (...args: any[]) => any>(method: T): T {
-    const self = this;
-    return (async function(...args: any[]) {
-      try {
-        return await method.apply(self, args);
-      } catch (error) {
-        if (error.response && error.response.status === 429) {
-          const retryAfter = error.response.headers['retry-after'] || 60;
-          await self.logWarn('Rate limit exceeded', {
-            retryAfter: `${retryAfter}s`,
-            endpoint: args[0],
-            method: method.name
-          });
-          
-          // Optional: implement automatic retry after delay
-          await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-          return await method.apply(self, args);
-        }
-        throw error;
-      }
-    }) as T;
-  }
-
-  // Include previous decorator methods here...
-  private applyMethodLogging<T extends (...args: any[]) => any>(method: T): T {
-    const self = this;
-    return (async function(...args: any[]) {
-      await self.logDebug(`🚀 API Call: ${method.name}`, { args: args.length });
-      
-      const start = Date.now();
-      try {
-        const result = await method.apply(self, args);
-        const duration = Date.now() - start;
-        await self.logDebug(`✅ API Call completed: ${method.name} (${duration}ms)`);
-        return result;
-      } catch (error) {
-        const duration = Date.now() - start;
-        await self.logError(`❌ API Call failed: ${method.name} (${duration}ms)`, {
-          error: error.message,
-          status: error.response?.status,
-          statusText: error.response?.statusText
-        });
-        throw error;
-      }
-    }) as T;
-  }
-
-  private applyPerformanceLogging<T extends (...args: any[]) => any>(method: T, threshold: number): T {
-    const self = this;
-    return (async function(...args: any[]) {
-      const start = Date.now();
-      const result = await method.apply(self, args);
-      const duration = Date.now() - start;
-      
-      if (duration > threshold) {
-        await self.logWarn(`🐌 Slow API call: ${method.name}`, {
-          duration: `${duration}ms`,
-          threshold: `${threshold}ms`,
-          endpoint: args[0]
-        });
-      }
-      
-      return result;
-    }) as T;
-  }
-
-  private applyRetryLogging<T extends (...args: any[]) => any>(method: T): T {
-    const self = this;
-    return (async function(...args: any[]) {
-      const { maxRetries, baseDelay, backoffFactor } = self.retryConfig;
-      let lastError: Error;
-
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          if (attempt > 1) {
-            await self.logInfo(`🔄 API Retry attempt ${attempt}/${maxRetries}`, {
-              method: method.name,
-              endpoint: args[0]
-            });
-          }
-
-          return await method.apply(self, args);
-        } catch (error) {
-          lastError = error;
-          
-          // Don't retry for client errors (4xx)
-          if (error.response && error.response.status >= 400 && error.response.status < 500) {
-            throw error;
-          }
-
-          await self.logWarn(`⚠️ API attempt ${attempt}/${maxRetries} failed`, {
-            method: method.name,
-            endpoint: args[0],
-            error: error.message,
-            status: error.response?.status,
-            willRetry: attempt < maxRetries
-          });
-
-          if (attempt < maxRetries) {
-            const delay = baseDelay * Math.pow(backoffFactor, attempt - 1);
-            await new Promise(resolve => setTimeout(resolve, delay));
-          }
-        }
-      }
-
-      await self.logError(`💥 All API retry attempts failed`, {
-        method: method.name,
-        endpoint: args[0],
-        maxRetries,
-        finalError: lastError.message
-      });
-
-      throw lastError;
-    }) as T;
-  }
-}
-
-// Usage Example
-const apiService = new ApiService(logger, httpClient, 'https://api.example.com');
-
-// All methods now have comprehensive logging, performance monitoring, and retry logic
-const userData = await apiService.get('/users/123');
-const newUser = await apiService.post('/users', { name: 'John', email: 'john@example.com' });
+const fileTransport = CommonLoggerConfig.getTransport("node-file") as NodeFileTransport;
+await fileTransport.rotateLogs(10 * 1024 * 1024); // Rotate if > 10MB
 ```
 
 ---
 
 ## 📋 Migration Guide
 
-### From console.log
+### From v2.1.0 to v3.0.0
+
+**Breaking Changes:**
+- Transport names have changed (e.g., `"file"` → `"node-file"`)
+- Dynamic imports for optional dependencies
+- New transport configuration format
+
+**Migration Steps:**
+
+1. **Update Transport Names**
 
 ```typescript
-// ❌ Before: Basic console logging
-console.log('User logged in:', user);
-console.error('API Error:', error);
-console.warn('Deprecated function called');
+// Before (v2.1.0)
+.addModule("Auth", true, ["info"], ["console", "file"])
 
-// ✅ After: Structured logging with @dqcai/logger
-logger.info('AuthService', 'User logged in', { 
-  userId: user.id, 
-  email: user.email,
-  loginTime: new Date().toISOString()
+// After (v3.0.0)
+.addModule("Auth", true, ["info"], ["console", "node-file"])
+```
+
+2. **Update File Transport Configuration**
+
+```typescript
+// Before (v2.1.0)
+import { FileTransport } from "@dqcai/logger";
+const transport = new FileTransport("./logs/app.log");
+
+// After (v3.0.0)
+import { NodeFileTransport } from "@dqcai/logger";
+const transport = new NodeFileTransport({
+  filePath: "./logs/app.log",
+  maxFileSize: 10 * 1024 * 1024,
+  maxFiles: 5
+});
+```
+
+3. **Install Optional Dependencies**
+
+```bash
+# Only if you use these transports
+npm install @dqcai/orm      # For DBTransport
+npm install react-native-fs # For RNFileTransport
+npm install axios           # For ApiTransport
+```
+
+4. **New Features (Optional)**
+
+```typescript
+// Use new DBTransport
+import { DBTransport } from "@dqcai/logger";
+
+const dbTransport = new DBTransport({
+  databaseType: "sqlite",
+  database: "logs"
 });
 
-logger.error('ApiService', 'API request failed', { 
-  endpoint: '/api/users',
-  error: error.message,
-  stack: error.stack,
-  requestId: context.requestId
-});
+CommonLoggerConfig.addTransport(dbTransport);
 
-logger.warn('UtilsService', 'Deprecated function called', {
-  function: 'oldUtilFunction',
-  caller: 'UserController.createUser',
-  deprecatedSince: '2024-01-01'
-});
-```
-
-### From Other Logging Libraries
-
-```typescript
-// From winston
-// winston.info('message', { meta });
-logger.info('ModuleName', 'message', { meta });
-
-// From pino
-// logger.info({ msg: 'message', ...meta });
-logger.info('ModuleName', 'message', meta);
-
-// From react-native-logs
-// const log = logger.createLogger();
-// log.debug('message');
-const moduleLogger = logger.createModuleLogger('ModuleName');
-await moduleLogger.debug('message');
-```
-
-### Gradual Migration Strategy
-
-```typescript
-// Step 1: Create wrapper for existing code
-class LegacyLoggerWrapper {
-  constructor(private newLogger: any, private moduleName: string) {}
-
-  info(message: string, meta?: any) {
-    this.newLogger.info(this.moduleName, message, meta);
-  }
-
-  error(message: string, error?: Error, meta?: any) {
-    this.newLogger.error(this.moduleName, message, { 
-      error: error?.message,
-      stack: error?.stack,
-      ...meta 
-    });
-  }
-
-  debug(message: string, meta?: any) {
-    this.newLogger.debug(this.moduleName, message, meta);
-  }
-
-  warn(message: string, meta?: any) {
-    this.newLogger.warn(this.moduleName, message, meta);
-  }
-}
-
-// Step 2: Replace gradually
-// OLD: const logger = winston.createLogger(...);
-const logger = createLogger();
-const legacyLogger = new LegacyLoggerWrapper(logger, 'LegacyModule');
-
-// Step 3: Eventually migrate to BaseModule or direct usage
-class NewService extends BaseModule {
-  constructor() {
-    super('NewService', logger);
-  }
-  
-  async doSomething() {
-    await this.logInfo('Operation started');
-    // ... business logic
-    await this.logInfo('Operation completed successfully');
-  }
-}
-```
-
----
-
-## 🔧 Advanced Utilities and Helpers
-
-### Decorator Utility Class
-
-```typescript
-class DecoratorUtils {
-  static createCombinedDecorator(logger: any, options: {
-    enableMethod?: boolean;
-    performanceThreshold?: number;
-    cacheEnabled?: boolean;
-    cacheTTL?: number;
-    retryEnabled?: boolean;
-    maxRetries?: number;
-    retryDelay?: number;
-  } = {}) {
-    const {
-      enableMethod = true,
-      performanceThreshold = 1000,
-      cacheEnabled = false,
-      cacheTTL = 60000,
-      retryEnabled = false,
-      maxRetries = 3,
-      retryDelay = 1000
-    } = options;
-
-    return function<T extends (...args: any[]) => any>(
-      originalFunction: T, 
-      functionName: string
-    ): T {
-      let decorated = originalFunction;
-
-      if (enableMethod) {
-        decorated = DecoratorUtils.applyMethodLogging(decorated, logger, functionName);
-      }
-
-      if (performanceThreshold > 0) {
-        decorated = DecoratorUtils.applyPerformanceLogging(
-          decorated, 
-          logger, 
-          functionName, 
-          performanceThreshold
-        );
-      }
-
-      if (cacheEnabled) {
-        decorated = DecoratorUtils.applyCaching(decorated, logger, functionName, cacheTTL);
-      }
-
-      if (retryEnabled) {
-        decorated = DecoratorUtils.applyRetry(
-          decorated, 
-          logger, 
-          functionName, 
-          maxRetries, 
-          retryDelay
-        );
-      }
-
-      return decorated;
-    };
-  }
-
-  static applyMethodLogging<T extends (...args: any[]) => any>(
-    originalFunction: T,
-    logger: any,
-    methodName: string
-  ): T {
-    return (async function(...args: any[]) {
-      if (!logger) return await originalFunction.apply(this, args);
-
-      try {
-        await logger.debug(`🚀 ${methodName} started`, {
-          args: args.length,
-          timestamp: new Date().toISOString()
-        });
-
-        const start = Date.now();
-        try {
-          const result = await originalFunction.apply(this, args);
-          const duration = Date.now() - start;
-          await logger.debug(`✅ ${methodName} completed`, { duration: `${duration}ms` });
-          return result;
-        } catch (error) {
-          const duration = Date.now() - start;
-          await logger.error(`❌ ${methodName} failed`, {
-            duration: `${duration}ms`,
-            error: error.message
-          });
-          throw error;
-        }
-      } catch (logError) {
-        console.warn(`[DecoratorUtils] Logging failed for ${methodName}:`, logError);
-        return await originalFunction.apply(this, args);
-      }
-    }) as T;
-  }
-
-  // Include other utility methods...
-}
-
-// Usage
-const combinedDecorator = DecoratorUtils.createCombinedDecorator(logger, {
-  enableMethod: true,
-  performanceThreshold: 2000,
-  cacheEnabled: true,
-  cacheTTL: 30000,
-  retryEnabled: true,
-  maxRetries: 2
-});
-
-const optimizedFunction = combinedDecorator(originalFunction, 'optimizedFunction');
-```
-
-### Log Analysis Helper
-
-```typescript
-class LogAnalyzer {
-  constructor(private transport: any) {}
-
-  async analyzePerformance(moduleName: string, timeRange: { start: Date; end: Date }) {
-    const logs = await this.transport.getLogs(moduleName, timeRange);
-    
-    const performanceLogs = logs
-      .filter((log: any) => log.message.includes('completed') || log.message.includes('failed'))
-      .map((log: any) => ({
-        method: this.extractMethodName(log.message),
-        duration: this.extractDuration(log.metadata),
-        success: !log.message.includes('failed'),
-        timestamp: log.timestamp
-      }));
-
-    return {
-      totalCalls: performanceLogs.length,
-      successRate: performanceLogs.filter(l => l.success).length / performanceLogs.length,
-      averageDuration: performanceLogs.reduce((sum, l) => sum + l.duration, 0) / performanceLogs.length,
-      slowestCalls: performanceLogs
-        .sort((a, b) => b.duration - a.duration)
-        .slice(0, 10),
-      errorRate: performanceLogs.filter(l => !l.success).length / performanceLogs.length
-    };
-  }
-
-  private extractMethodName(message: string): string {
-    const match = message.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s+(completed|failed)/);
-    return match ? match[1] : 'unknown';
-  }
-
-  private extractDuration(metadata: any): number {
-    if (metadata && metadata.duration) {
-      const duration = metadata.duration.replace('ms', '');
-      return parseInt(duration, 10) || 0;
-    }
-    return 0;
-  }
-}
-```
-
----
-
-## 🎯 TypeScript and ES2017 Features
-
-### Type-Safe Module Logger
-
-```typescript
-interface LogMetadata {
-  [key: string]: any;
-}
-
-interface TypedLogger {
-  debug(module: string, message: string, metadata?: LogMetadata): Promise<void>;
-  info(module: string, message: string, metadata?: LogMetadata): Promise<void>;
-  warn(module: string, message: string, metadata?: LogMetadata): Promise<void>;
-  error(module: string, message: string, metadata?: LogMetadata): Promise<void>;
-}
-
-class TypedBaseModule {
-  protected logger: TypedLogger;
-  protected moduleName: string;
-
-  constructor(moduleName: string, logger: TypedLogger) {
-    this.moduleName = moduleName;
-    this.logger = logger;
-  }
-
-  protected async logDebug(message: string, metadata?: LogMetadata): Promise<void> {
-    await this.logger.debug(this.moduleName, message, metadata);
-  }
-
-  protected async logInfo(message: string, metadata?: LogMetadata): Promise<void> {
-    await this.logger.info(this.moduleName, message, metadata);
-  }
-
-  protected async logWarn(message: string, metadata?: LogMetadata): Promise<void> {
-    await this.logger.warn(this.moduleName, message, metadata);
-  }
-
-  protected async logError(message: string, metadata?: LogMetadata): Promise<void> {
-    await this.logger.error(this.moduleName, message, metadata);
-  }
-}
-```
-
-### Generic Decorator Types
-
-```typescript
-type AsyncFunction<T extends any[] = any[], R = any> = (...args: T) => Promise<R>;
-type DecoratorFunction<T extends AsyncFunction> = (fn: T) => T;
-
-interface DecoratorOptions {
-  performance?: {
-    enabled: boolean;
-    threshold: number;
-  };
-  caching?: {
-    enabled: boolean;
-    ttl: number;
-  };
-  retry?: {
-    enabled: boolean;
-    maxRetries: number;
-    baseDelay: number;
-  };
-}
-
-class TypedDecoratorFactory {
-  static createDecorator<T extends AsyncFunction>(
-    logger: TypedLogger,
-    options: DecoratorOptions
-  ): DecoratorFunction<T> {
-    return (fn: T): T => {
-      let decorated: T = fn;
-
-      if (options.performance?.enabled) {
-        decorated = this.addPerformanceLogging(
-          decorated, 
-          logger, 
-          options.performance.threshold
-        );
-      }
-
-      if (options.caching?.enabled) {
-        decorated = this.addCaching(decorated, logger, options.caching.ttl);
-      }
-
-      if (options.retry?.enabled) {
-        decorated = this.addRetry(
-          decorated, 
-          logger, 
-          options.retry.maxRetries,
-          options.retry.baseDelay
-        );
-      }
-
-      return decorated;
-    };
-  }
-
-  private static addPerformanceLogging<T extends AsyncFunction>(
-    fn: T,
-    logger: TypedLogger,
-    threshold: number
-  ): T {
-    return (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
-      const start = Date.now();
-      const result = await fn(...args);
-      const duration = Date.now() - start;
-
-      if (duration > threshold) {
-        await logger.warn('Performance', `Slow execution detected`, {
-          function: fn.name,
-          duration: `${duration}ms`,
-          threshold: `${threshold}ms`
-        });
-      }
-
-      return result;
-    }) as T;
-  }
-
-  // Additional typed decorator methods...
-}
-```
-
-### ES2017 Async/Await Patterns
-
-```typescript
-class ES2017Logger extends TypedBaseModule {
-  // Using ES2017 async/await with proper error handling
-  async processWithLogging<T>(
-    operation: string,
-    processor: () => Promise<T>
-  ): Promise<T> {
-    await this.logInfo(`Starting ${operation}`);
-    
-    try {
-      const result = await processor();
-      await this.logInfo(`Completed ${operation} successfully`);
-      return result;
-    } catch (error) {
-      await this.logError(`Failed ${operation}`, {
-        error: error.message,
-        stack: error.stack
-      });
-      throw error;
-    }
-  }
-
-  // ES2017 Object.entries for metadata processing
-  async logWithProcessedMetadata(
-    level: 'debug' | 'info' | 'warn' | 'error',
-    message: string,
-    metadata: LogMetadata = {}
-  ): Promise<void> {
-    const processedMetadata = Object.entries(metadata).reduce((acc, [key, value]) => {
-      // Process and sanitize metadata values
-      acc[key] = this.sanitizeValue(value);
-      return acc;
-    }, {} as LogMetadata);
-
-    await this.logger[level](this.moduleName, message, processedMetadata);
-  }
-
-  private sanitizeValue(value: any): any {
-    if (value === null || value === undefined) return value;
-    if (typeof value === 'string' && value.length > 1000) {
-      return `${value.substring(0, 1000)}... [truncated]`;
-    }
-    if (typeof value === 'object') {
-      return JSON.stringify(value).substring(0, 500);
-    }
-    return value;
-  }
-
-  // ES2017 async iterators for log streaming
-  async* streamLogs(filter?: (log: any) => boolean): AsyncIterableIterator<any> {
-    const logs = await this.getLogs();
-    for (const log of logs) {
-      if (!filter || filter(log)) {
-        yield log;
-      }
-    }
-  }
-
-  private async getLogs(): Promise<any[]> {
-    // Implementation depends on your transport
-    return [];
-  }
-}
+// Query logs
+const errors = await dbTransport.getLogsByLevel("error");
 ```
 
 ---
 
 ## 📈 Comparison Table
 
-| Feature | @dqcai/logger | winston | pino | react-native-logs | tslog |
-|---------|---------------|---------|------|-------------------|--------|
-| **Platform Support** | | | | | |
-| Node.js | ✅ | ✅ | ✅ | ❌ | ✅ |
-| Web Browser | ✅ | ⚠️ | ⚠️ | ✅ | ✅ |
-| React Native | ✅ | ❌ | ❌ | ✅ | ❌ |
-| **Features** | | | | | |
-| TypeScript Support | ✅ | ⚠️ | ✅ | ❌ | ✅ |
-| Module-based Logging | ✅ | ⚠️ | ❌ | ❌ | ❌ |
-| Runtime Configuration | ✅ | ⚠️ | ❌ | ⚠️ | ❌ |
-| Multiple Transports | ✅ | ✅ | ✅ | ⚠️ | ⚠️ |
-| Logger Decorators | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Performance Monitoring | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Built-in Caching | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Retry Logic | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Bundle Size** | | | | | |
-| Core Size | ~15KB | ~200KB | ~50KB | ~20KB | ~30KB |
-| Tree Shakable | ✅ | ❌ | ⚠️ | ⚠️ | ✅ |
-| Zero Dependencies | ✅ | ❌ | ❌ | ⚠️ | ❌ |
+| Feature | v2.1.0 | v3.0.0 |
+|---------|--------|--------|
+| Console Transport | ✅ | ✅ |
+| File Transport (Generic) | ✅ | ❌ |
+| Node.js File Transport | ❌ | ✅ |
+| React Native File Transport | ⚠️ | ✅ |
+| Electron File Transport | ❌ | ✅ |
+| Database Transport | ❌ | ✅ |
+| API Transport | ⚠️ | ✅ |
+| Custom Transports | ⚠️ | ✅ |
+| Dynamic Imports | ❌ | ✅ |
+| Session Tracking | ❌ | ✅ |
+| Statistics | ❌ | ✅ |
+| Log Querying | ❌ | ✅ |
+| Auto Cleanup | ❌ | ✅ |
+| Bundle Size | ~15KB | ~18KB core (transports loaded on-demand) |
 
 ---
 
 ## 🤖 AI-Powered Development
 
-This project was **built with AI assistance** in just minutes using Claude, ChatGPT, Grok, and Gemini.
+This project was **built with AI assistance** using Claude, ChatGPT, Grok, and Gemini.
 
-### AI Development Benefits
+### Using AI with @dqcai/logger v3.0
 
-- ⚡ **Rapid Prototyping**: From concept to working library in minutes
-- 🎯 **Focus on Ideas**: Let AI handle implementation details
-- 📚 **Comprehensive Documentation**: AI-generated examples and guides
-- 🧪 **Test Coverage**: AI-generated test cases and scenarios
-- 🔧 **Best Practices**: AI implements industry-standard patterns
+You can use AI tools to generate custom transports:
 
-### Using AI with @dqcai/logger
-
-You can use AI tools to generate custom transports, decorators, and configurations:
-
-```typescript
-// Example AI prompt:
-// "Create a custom transport for @dqcai/logger that sends logs to Elasticsearch
-// with batching and retry logic"
-
-// AI-generated ElasticsearchTransport
-class ElasticsearchTransport implements ILogTransport {
-  readonly name = 'elasticsearch';
-  // ... AI-generated implementation
-}
+**Example Prompt:**
+```
+Create a Redis transport for @dqcai/logger v3.0 that:
+- Implements ILogTransport interface
+- Stores logs in Redis lists with TTL
+- Supports log levels as separate lists
+- Has automatic cleanup of old logs
+- Uses ioredis library
 ```
 
 ---
@@ -1906,10 +1405,10 @@ Join our **AI developer community** on Facebook:
 
 **What you'll get:**
 - 📘 Advanced usage patterns and examples
-- 🔧 Sample system prompts for code generation
-- 🛠 Custom transport implementations
+- 🔧 Custom transport implementations
+- 🛠 Sample configurations for different platforms
 - 💬 Direct discussion with other developers
-- 🚀 AI learning resources from zero to advanced
+- 🚀 AI learning resources
 
 ### Contributing
 
@@ -1928,19 +1427,19 @@ MIT © [Cuong Doan](https://github.com/cuongdqpayment)
 
 ## 🔥 Summary
 
-**@dqcai/logger** is the **only logger you need** for modern JavaScript/TypeScript applications:
+**@dqcai/logger v3.0** is the **ultimate logging solution** for modern JavaScript/TypeScript applications:
 
-- ✅ **Universal**: Works on Node.js, Web, and React Native
-- ✅ **Type-Safe**: Full TypeScript support with ES2017 compatibility  
-- ✅ **Flexible**: Module-based configuration with runtime control
-- ✅ **Advanced**: Built-in decorators for logging, performance, caching, retry
-- ✅ **Lightweight**: Zero dependencies, tree-shakable
-- ✅ **AI-Ready**: Perfect for AI-assisted development workflows
+- ✅ **Universal**: Node.js, Web, React Native, Electron
+- ✅ **Powerful Transports**: Console, File, Database, API, Custom
+- ✅ **Smart Loading**: Dynamic imports keep bundle size minimal
+- ✅ **Production-Ready**: Session tracking, statistics, auto-cleanup
+- ✅ **Developer-Friendly**: TypeScript-first, simple API, great DX
+- ✅ **AI-Powered**: Built with and for AI-assisted development
 
-Stop juggling multiple logging libraries. Start with **@dqcai/logger** today and enjoy consistent, powerful logging across all your applications.
+Stop juggling multiple logging libraries. Start with **@dqcai/logger v3.0** today!
 
 ```bash
 npm install @dqcai/logger
 ```
 
-**Your universal logging solution is just one command away!**
+**Your universal, powerful logging solution is just one command away!**
