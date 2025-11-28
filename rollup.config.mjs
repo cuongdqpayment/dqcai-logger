@@ -21,18 +21,22 @@ export default {
       file: "lib/index.js", // CommonJS use: import ... from '...';
       format: "cjs",
       sourcemap: true, // Tùy chọn: Thêm source map để debug
+      inlineDynamicImports: true,
       exports: "auto",
     },
     {
       file: "lib/index.mjs", // ES Module: use = require('..');
       format: "esm",
+      inlineDynamicImports: true,
       sourcemap: true,
     },
     {
       file: "lib/index.umd.js", // UMD cho browser và hybrid
       format: "umd",
+      inlineDynamicImports: true,
       name: "Logger", // Tên global variable cho browser
       sourcemap: true,
+
     },
   ],
   plugins: [
