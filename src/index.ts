@@ -12,6 +12,7 @@ export {
   ElectronFileTransport,
   NodeFileTransport,
   RNFileTransport,
+  DBTransport,
 } from "./transports";
 
 export type {
@@ -20,6 +21,7 @@ export type {
   ElectronFileTransportConfig,
   NodeFileTransportConfig,
   RNFileTransportConfig,
+  DBTransportConfig,
 } from "./transports";
 
 export { BaseModule } from "./core/BaseModule";
