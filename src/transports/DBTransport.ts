@@ -48,9 +48,7 @@ export class DBTransport implements ILogTransport {
 
   // Session tracking
   private currentSessionId: string | null = null;
-
-  private retryCount = 0;
-  private maxRetries = 5;
+  private flushInProgress: Promise<void> = Promise.resolve();
 
   constructor(config: DBTransportConfig = {}) {
     this.config = {
@@ -73,14 +71,6 @@ export class DBTransport implements ILogTransport {
     this.initDatabase();
   }
 
-  private scheduleRetry(delay: number) {
-    if (this.retryCount >= this.maxRetries) return;
-    this.retryCount++;
-    this.timer = setTimeout(() => {
-      this.retryCount = 0;
-      this.flush().catch(() => {});
-    }, delay);
-  }
   /**
    * Initialize database with dynamic imports
    */
@@ -266,41 +256,41 @@ export class DBTransport implements ILogTransport {
 
     if (this.buffer.length === 0) return;
 
-    // Đảm bảo đã init xong
     if (!this.initialized) {
       await this.initDatabase();
     }
 
     const batch = [...this.buffer];
-    this.buffer = []; // clear sớm để tránh duplicate
+    this.buffer = [];
 
     try {
-      // === KHÔNG DÙNG withTransaction NỮA ===
-      // Vì bulkUpsert đã tự chạy trong transaction rồi!
-      // Ghi log chính
+      // ✅ Gọi bulkUpsert tuần tự, KHÔNG dùng transaction wrapper
+
+      // 1. Ghi logs chính
       const logRecords = batch.map((entry) => this.mapToLogRecord(entry));
       await this.logService.bulkUpsert(logRecords);
 
-      // Ghi error_logs (nếu bật)
+      // 2. Ghi error logs (nếu bật)
       if (this.config.enableErrorTable && this.errorLogService) {
         const errorLogs = batch
           .filter((e) => e.level === "error")
           .map((entry) => this.mapToErrorRecord(entry));
+
         if (errorLogs.length > 0) {
           await this.errorLogService.bulkUpsert(errorLogs);
         }
       }
 
-      // Cập nhật thống kê (cũng dùng bulkUpsert → đã atomic)
+      // 3. Cập nhật statistics (gọi từng upsert riêng lẻ)
       if (this.config.enableStatistics && this.statisticsService) {
-        await this.updateStatisticsInTransaction(batch);
+        await this.updateStatistics(batch);
       }
 
       this.logger.debug(
         `Successfully flushed ${batch.length} logs to database`
       );
     } catch (err: any) {
-      // Nếu lỗi → đưa lại toàn bộ batch để retry
+      // Đưa batch về buffer để retry
       this.buffer.unshift(...batch);
       this.logger.error("Failed to flush logs to database", {
         message: err.message,
@@ -308,13 +298,66 @@ export class DBTransport implements ILogTransport {
         batchSize: batch.length,
       });
 
-      // Retry sau 1-3s (jitter để tránh thundering herd)
+      // Retry với backoff
       const delay = 1000 + Math.random() * 2000;
       this.timer = setTimeout(() => this.flush(), delay);
     }
   }
 
+  // ✅ Sửa updateStatistics - dùng bulkUpsert thay vì nhiều upsert
+  private async updateStatistics(entries: LogEntry[]): Promise<void> {
+    if (!this.statisticsService) return;
+
+    const today = new Date().toISOString().split("T")[0];
+    const stats = new Map<string, number>();
+
+    // Tính toán stats
+    for (const entry of entries) {
+      const key = `${entry.module}:${entry.level}`;
+      stats.set(key, (stats.get(key) || 0) + 1);
+    }
+
+    // Fetch existing stats để merge
+    const statsToUpsert = [];
+    for (const [key, count] of stats) {
+      const [module, level] = key.split(":");
+
+      // Lấy stat hiện tại (nếu có)
+      const existing = await this.statisticsService.findOne({
+        date: today,
+        module,
+        level,
+      });
+
+      statsToUpsert.push({
+        id: existing?.id, // Giữ nguyên ID nếu đã tồn tại
+        date: today,
+        module,
+        level,
+        count: (existing?.count || 0) + count,
+      });
+    }
+
+    // Dùng bulkUpsert một lần duy nhất
+    if (statsToUpsert.length > 0) {
+      await this.statisticsService.bulkUpsert(
+        statsToUpsert,
+        ["date", "module", "level"] // Conflict keys
+      );
+    }
+  }
+
+  // Thêm debug log vào DBTransport.ts
   private mapToLogRecord(entry: LogEntry) {
+    const sessionId = entry.sessionId || this.currentSessionId || null;
+
+    if (sessionId) {
+      this.logger.debug("Mapping log with session_id", {
+        sessionId,
+        message: entry.message,
+      });
+    }
+
     return {
       timestamp: entry.timestamp,
       level: entry.level,
@@ -322,7 +365,7 @@ export class DBTransport implements ILogTransport {
       message: entry.message,
       data: entry.data ? JSON.stringify(entry.data) : null,
       metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
-      session_id: entry.sessionId || this.currentSessionId,
+      session_id: sessionId,
     };
   }
 
@@ -341,61 +384,6 @@ export class DBTransport implements ILogTransport {
     };
   }
 
-  private async updateStatisticsInTransaction(
-    entries: LogEntry[]
-  ): Promise<void> {
-    if (!this.statisticsService) return;
-
-    const today = new Date().toISOString().split("T")[0];
-    const stats = new Map<string, number>();
-
-    for (const entry of entries) {
-      const key = `${entry.module}:${entry.level}`;
-      stats.set(key, (stats.get(key) || 0) + 1);
-    }
-
-    for (const [key, count] of stats) {
-      const [module, level] = key.split(":");
-      await this.statisticsService.upsert(
-        { date: today, module, level, count },
-        ["date", "module", "level"]
-      );
-    }
-  }
-
-  /**
-   * Update log statistics
-   */
-  private async updateStatistics(entries: LogEntry[]): Promise<void> {
-    try {
-      const today = new Date().toISOString().split("T")[0];
-      const stats: Record<string, number> = {};
-
-      // Count logs by module and level
-      entries.forEach((entry) => {
-        const key = `${entry.module}:${entry.level}`;
-        stats[key] = (stats[key] || 0) + 1;
-      });
-
-      // Update statistics
-      for (const [key, count] of Object.entries(stats)) {
-        const [module, level] = key.split(":");
-
-        await this.statisticsService.upsert(
-          {
-            date: today,
-            module,
-            level,
-            count,
-          },
-          ["date", "module", "level"]
-        );
-      }
-    } catch (err) {
-      this.logger.error("Failed to update statistics", err);
-    }
-  }
-
   /**
    * Start a new session
    */
@@ -410,11 +398,18 @@ export class DBTransport implements ILogTransport {
 
     if (this.config.enableStatistics && this.sessionService) {
       try {
-        await this.sessionService.upsert({
+        // Kiểm tra session đã tồn tại chưa
+        const existing = await this.sessionService.findOne({
           session_id: this.currentSessionId,
-          started_at: new Date().toISOString(),
-          status: "active",
         });
+
+        if (!existing) {
+          await this.sessionService.create({
+            session_id: this.currentSessionId,
+            started_at: new Date().toISOString(),
+            status: "active",
+          });
+        }
 
         this.logger.info("Session started", {
           sessionId: this.currentSessionId,

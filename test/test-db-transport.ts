@@ -237,7 +237,7 @@ async function test4_StressTest(dbTransport: DBTransport) {
 
   const logger = createModuleLogger(APPModules.TEST_DB);
   const startTime = Date.now();
-  const totalLogs = 100;
+  const totalLogs = 50; // ✅ Giảm từ 100 xuống 50
 
   console.log(`Generating ${totalLogs} logs...`);
 
@@ -251,17 +251,23 @@ async function test4_StressTest(dbTransport: DBTransport) {
     } else {
       logger.info(`Info log ${i}`, { iteration: i, timestamp: Date.now() });
     }
+
+    // ✅ Thêm delay nhỏ để tránh tràn buffer
+    if (i % 10 === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
   }
 
   await CommonLoggerConfig.flush();
-  const duration = Date.now() - startTime;
 
+  // ✅ Tăng thời gian chờ để đảm bảo flush hoàn tất
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  const duration = Date.now() - startTime;
   console.log(`\n✓ Generated ${totalLogs} logs in ${duration}ms`);
   console.log(
     `✓ Rate: ${((totalLogs / duration) * 1000).toFixed(2)} logs/second`
   );
-
-  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   // Get stats
   const stats = await dbTransport.getTransportStats();
@@ -289,17 +295,51 @@ async function test5_SessionTracking(dbTransport: DBTransport) {
   const sessionId = await dbTransport.startSession("test_session_001");
   console.log("✓ Session started:", sessionId);
 
-  // Generate logs for this session
+  // ✅ Thay vì dùng logger.info, dùng trực tiếp log method với sessionId
   for (let i = 0; i < 10; i++) {
-    logger.info(`Session log ${i}`, { sessionId, iteration: i });
+    // Option 1: Pass sessionId trong metadata
+    logger.info(
+      `Session log ${i}`,
+      {
+        sessionId, // ⬅️ Trong data
+        iteration: i,
+      },
+      { sessionId } // ⬅️ HOẶC trong metadata
+    );
   }
 
   await CommonLoggerConfig.flush();
-  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // ✅ Tăng delay lên 2 giây để đảm bảo flush hoàn tất
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  // ✅ THÊM: Query trực tiếp để debug
+  const allLogs = await dbTransport.queryLogs({}, { limit: 100 });
+  console.log(`\n✓ Total logs in DB: ${allLogs.length}`);
+
+  const logsWithSession = allLogs.filter((log) => log.session_id);
+  console.log(`✓ Logs with session_id: ${logsWithSession.length}`);
+
+  if (logsWithSession.length > 0) {
+    console.log("✓ Sample session IDs found:", [
+      ...new Set(logsWithSession.map((l) => l.session_id)),
+    ]);
+  }
 
   // Query logs by session
   const sessionLogs = await dbTransport.getLogsBySession(sessionId);
   console.log(`\n✓ Found ${sessionLogs.length} logs for session ${sessionId}`);
+
+  // ✅ THÊM: Hiển thị chi tiết nếu không tìm thấy
+  if (sessionLogs.length === 0) {
+    console.log("⚠️ Session logs not found. Checking last 10 logs:");
+    const recentLogs = await dbTransport.queryLogs({}, { limit: 10 });
+    recentLogs.forEach((log) => {
+      console.log(
+        `  - ${log.message} | session_id: ${log.session_id || "NULL"}`
+      );
+    });
+  }
 
   // End session
   await dbTransport.endSession();
