@@ -1,3 +1,4 @@
+```ts
 import {BaseModule, LoggerConfigBuilder, createLogger } from '..';
 const config = new LoggerConfigBuilder()
   .setEnabled(true)
@@ -72,3 +73,4 @@ export {
   BaseModule,
   logger,
 };
+```

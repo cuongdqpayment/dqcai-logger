@@ -1,15 +1,27 @@
-// in @dqcai/logger library
-// ./src/config/logger-config.ts
-import { LoggerConfig } from "../types/Logger.types";
+// config/logger-config.ts - Improved version
+import { LoggerConfig, ILogTransport } from "../types/Logger.types";
 import { UniversalLogger } from "../core/Logger";
 import { LoggerConfigBuilder } from "../config/ConfigBuilder";
 import { ConsoleTransport } from "../transports/ConsoleTransport";
 import { LoggerUtils } from "../utils/LoggerUtils";
 
-export const createLogger = (config?: LoggerConfig): UniversalLogger => {
+export const createLogger = (
+  config?: LoggerConfig,
+  transports?: ILogTransport[]
+): UniversalLogger => {
   const defaultConfig = config || LoggerUtils.createDevelopmentConfig();
   const logger = new UniversalLogger(defaultConfig);
+
+  // Add default console transport
   logger.addTransport(new ConsoleTransport());
+
+  // Add custom transports if provided
+  if (transports && transports.length > 0) {
+    transports.forEach(transport => {
+      logger.addTransport(transport);
+    });
+  }
+
   return logger;
 };
 
@@ -71,6 +83,7 @@ class LoggerProxy implements ModuleLogger {
 export class CommonLoggerConfig {
   private static instance: UniversalLogger | null = null;
   private static currentConfig: any = null;
+  private static customTransports: ILogTransport[] = [];
   private static isInitializing = false;
   public static proxyInstances: Map<string, LoggerProxy> = new Map();
 
@@ -81,26 +94,77 @@ export class CommonLoggerConfig {
       .build();
   }
 
-  static initialize(customConfig?: any): UniversalLogger {
-    // ✅ Nếu đang khởi tạo, đợi xong rồi return
+  /**
+   * ✨ NEW: Set custom transports before initialization
+   */
+  static setTransports(transports: ILogTransport[]): void {
+    CommonLoggerConfig.customTransports = transports;
+    
+    // If logger already exists, add transports to it
+    if (CommonLoggerConfig.instance) {
+      transports.forEach(transport => {
+        CommonLoggerConfig.instance!.addTransport(transport);
+      });
+    }
+  }
+
+  /**
+   * ✨ NEW: Add a single transport (can be called anytime)
+   */
+  static addTransport(transport: ILogTransport): void {
+    CommonLoggerConfig.customTransports.push(transport);
+    
+    if (CommonLoggerConfig.instance) {
+      CommonLoggerConfig.instance.addTransport(transport);
+    }
+  }
+
+  /**
+   * ✨ NEW: Remove a transport by name
+   */
+  static removeTransport(name: string): boolean {
+    CommonLoggerConfig.customTransports = CommonLoggerConfig.customTransports.filter(
+      t => t.name !== name
+    );
+    
+    if (CommonLoggerConfig.instance) {
+      return CommonLoggerConfig.instance.removeTransport(name);
+    }
+    return false;
+  }
+
+  /**
+   * ✨ NEW: Get list of active transports
+   */
+  static listTransports(): string[] {
+    if (CommonLoggerConfig.instance) {
+      return CommonLoggerConfig.instance.listTransports();
+    }
+    return CommonLoggerConfig.customTransports.map(t => t.name);
+  }
+
+  static initialize(customConfig?: any, transports?: ILogTransport[]): UniversalLogger {
     if (CommonLoggerConfig.isInitializing) {
-      // Busy wait (not ideal but safe for synchronous code)
       while (CommonLoggerConfig.isInitializing) {
         // Wait
       }
       return CommonLoggerConfig.instance!;
     }
 
-    // ✅ Nếu đã có instance và config không đổi, return luôn
-    if (CommonLoggerConfig.instance && !customConfig) {
+    if (CommonLoggerConfig.instance && !customConfig && !transports) {
       return CommonLoggerConfig.instance;
     }
 
     CommonLoggerConfig.isInitializing = true;
 
     const config = customConfig || CommonLoggerConfig.createDefaultConfig();
+    const allTransports = [
+      ...CommonLoggerConfig.customTransports,
+      ...(transports || [])
+    ];
+
     CommonLoggerConfig.currentConfig = config;
-    CommonLoggerConfig.instance = createLogger(config);
+    CommonLoggerConfig.instance = createLogger(config, allTransports);
 
     CommonLoggerConfig.isInitializing = false;
 
@@ -115,9 +179,6 @@ export class CommonLoggerConfig {
   }
 
   static updateConfiguration(newConfig: any): void {
-    //  console.log("🔄 [CommonLoggerConfig] Updating configuration:", newConfig);
-
-    // ✅ Nếu config giống hệt, skip
     const current = CommonLoggerConfig.currentConfig;
     if (
       current &&
@@ -125,20 +186,36 @@ export class CommonLoggerConfig {
       current.defaultLevel === newConfig.defaultLevel &&
       JSON.stringify(current.modules) === JSON.stringify(newConfig.modules)
     ) {
-      // console.log("⏭️ [CommonLoggerConfig] Config unchanged, skipping");
       return;
     }
 
     CommonLoggerConfig.currentConfig = newConfig;
-    CommonLoggerConfig.instance = createLogger(newConfig);
-
-    // console.log("✅ [CommonLoggerConfig] New instance created with config:", {
-    //   enabled: newConfig.enabled,
-    //   defaultLevel: newConfig.defaultLevel,
-    // });
+    
+    // Preserve transports when updating config
+    CommonLoggerConfig.instance = createLogger(
+      newConfig,
+      CommonLoggerConfig.customTransports
+    );
   }
 
-  // Rest of the code remains the same...
+  /**
+   * ✨ NEW: Flush all transports
+   */
+  static async flush(): Promise<void> {
+    if (CommonLoggerConfig.instance) {
+      await CommonLoggerConfig.instance.flush();
+    }
+  }
+
+  /**
+   * ✨ NEW: Cleanup all transports
+   */
+  static async cleanup(): Promise<void> {
+    if (CommonLoggerConfig.instance) {
+      await CommonLoggerConfig.instance.cleanup();
+    }
+  }
+
   static setEnabled(enabled: boolean): void {
     if (CommonLoggerConfig.currentConfig) {
       CommonLoggerConfig.currentConfig.enabled = enabled;
@@ -149,7 +226,7 @@ export class CommonLoggerConfig {
   static enableModule(
     moduleName: string,
     levels?: string[],
-    appenders?: string[]
+    transports?: string[]
   ): void {
     if (
       CommonLoggerConfig.currentConfig &&
@@ -158,7 +235,7 @@ export class CommonLoggerConfig {
       CommonLoggerConfig.currentConfig.modules[moduleName] = {
         enabled: true,
         levels: levels || ["debug", "info", "warn", "error"],
-        appenders: appenders || ["console"],
+        transports: transports || ["console"],
       };
       CommonLoggerConfig.updateConfiguration(CommonLoggerConfig.currentConfig);
     }
@@ -171,6 +248,8 @@ export class CommonLoggerConfig {
     ) {
       CommonLoggerConfig.currentConfig.modules[moduleName] = {
         enabled: false,
+        levels: [],
+        transports: [],
       };
       CommonLoggerConfig.updateConfiguration(CommonLoggerConfig.currentConfig);
     }
@@ -191,6 +270,7 @@ export class CommonLoggerConfig {
   }
 
   static reset(): UniversalLogger {
+    CommonLoggerConfig.customTransports = [];
     return CommonLoggerConfig.initialize();
   }
 
@@ -210,15 +290,13 @@ export const getCommonLogger = (): UniversalLogger => {
 };
 
 /**
- * Create module logger using proxy pattern - automatically updates when configuration changes
+ * Create module logger using proxy pattern
  */
 export const createModuleLogger = (moduleName: string): ModuleLogger => {
-  // Check if proxy already exists for this module
   if (CommonLoggerConfig.proxyInstances.has(moduleName)) {
     return CommonLoggerConfig.proxyInstances.get(moduleName)!;
   }
 
-  // Create new proxy
   const proxy = new LoggerProxy(moduleName);
   CommonLoggerConfig.proxyInstances.set(moduleName, proxy);
 
@@ -229,15 +307,11 @@ export const createModuleLogger = (moduleName: string): ModuleLogger => {
  * Utility functions for testing and debugging
  */
 export const LoggerDebugs = {
-  /**
-   * Test if a module logger responds to configuration changes
-   */
   testDynamicUpdate: (moduleName: string): void => {
     const logger = createModuleLogger(moduleName);
 
     console.log(`\n=== Testing ${moduleName} Logger Dynamic Updates ===`);
 
-    // Test with debug config
     console.log("1. Setting debug configuration...");
     CommonLoggerConfig.updateConfiguration(
       CommonLoggerConfig.createDebugConfig()
@@ -245,7 +319,6 @@ export const LoggerDebugs = {
     logger.debug("This DEBUG message should be visible");
     logger.info("This INFO message should be visible");
 
-    // Test with production config
     console.log("2. Setting production configuration...");
     CommonLoggerConfig.updateConfiguration(
       CommonLoggerConfig.createProductionConfig()
@@ -254,12 +327,10 @@ export const LoggerDebugs = {
     logger.info("This INFO message should be HIDDEN");
     logger.error("This ERROR message should be visible");
 
-    // Test module disable
     console.log("3. Disabling specific module...");
     CommonLoggerConfig.disableModule(moduleName);
     logger.error("This ERROR message should be HIDDEN (module disabled)");
 
-    // Test module re-enable
     console.log("4. Re-enabling specific module...");
     CommonLoggerConfig.enableModule(moduleName);
     logger.error("This ERROR message should be visible again");
@@ -267,9 +338,6 @@ export const LoggerDebugs = {
     console.log(`=== End test for ${moduleName} ===\n`);
   },
 
-  /**
-   * Show current logger statistics
-   */
   showStats: (): void => {
     console.log("\n=== Logger Statistics ===");
     console.log(
@@ -278,6 +346,7 @@ export const LoggerDebugs = {
       }`
     );
     console.log(`Proxy modules:`, CommonLoggerConfig.getActiveProxyModules());
+    console.log(`Active transports:`, CommonLoggerConfig.listTransports());
     console.log(
       `Current config enabled:`,
       CommonLoggerConfig.getCurrentConfig()?.enabled

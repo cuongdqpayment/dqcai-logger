@@ -21,9 +21,6 @@ try {
     // Transports
     ConsoleTransport,
 
-    // Factories
-    DefaultTransportFactory,
-
     // Configuration
     LoggerConfigBuilder,
 
@@ -46,7 +43,6 @@ try {
   console.log('- ModuleLogger:', typeof ModuleLogger);
   console.log('- BaseModule:', typeof BaseModule);
   console.log('- ConsoleTransport:', typeof ConsoleTransport);
-  console.log('- DefaultTransportFactory:', typeof DefaultTransportFactory);
   console.log('- LoggerConfigBuilder:', typeof LoggerConfigBuilder);
   console.log('- LoggerUtils:', typeof LoggerUtils);
   console.log('- LogMethod:', typeof LogMethod);

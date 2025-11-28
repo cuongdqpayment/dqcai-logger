@@ -5,6 +5,23 @@ export {
   ModuleLogger,
 } from "./core/Logger";
 
+// Liệt kê tất cả transport và type của nó ra đây
+export {
+  TransportFactory,
+  ApiTransport,
+  ElectronFileTransport,
+  NodeFileTransport,
+  RNFileTransport,
+} from "./transports";
+
+export type {
+  TransportFactoryConfig,
+  ApiTransportConfig,
+  ElectronFileTransportConfig,
+  NodeFileTransportConfig,
+  RNFileTransportConfig,
+} from "./transports";
+
 export { BaseModule } from "./core/BaseModule";
 
 export {
@@ -12,8 +29,6 @@ export {
   ConsoleTransport,
   type ConsoleTransportConfig,
 } from "./transports/ConsoleTransport";
-
-export { DefaultTransportFactory } from "./factories/DefaultTransportFactory";
 
 export {
   // Configuration
@@ -41,9 +56,6 @@ export {
   type ILogTransport,
   type ITransportFactory,
 } from "./types/Logger.types";
-
-// Factory mặc định
-export * from "./factories/DefaultTransportFactory";
 
 // LoggerTools
 export {
